@@ -25,6 +25,8 @@ const PlaylistDetailPage = ({ playlist }) => {
                     content={playlist?.description}
                 />
                 <meta property="og:image" content={playlist?.avatar?.thumb_url} />
+                <meta property="og:image:width" content={playlist?.avatar?.width || 1200} />
+                <meta property="og:image:height" content={playlist?.avatar?.height || 630} />
             </Head>
             <PlaylistDetail playlistFromAPI={playlist} />
         </Provider>
