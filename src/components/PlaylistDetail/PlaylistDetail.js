@@ -146,6 +146,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             setPlaylistAudios(data);
         }
         if (id) {
+            setUrl(window.location.href);
             fetchPlaylist();
             fetchRecommendedPlaylist();
             fetchPlaylistAudios();
@@ -173,7 +174,6 @@ export default function PlatlistDetail({ playlistFromAPI }) {
 
 
     useEffect(() => {
-        setUrl(window.location.href);
         audio.addEventListener('ended', () => setPaused(true));
         return () => {
             audio.removeEventListener('ended', () => setPaused(true));
