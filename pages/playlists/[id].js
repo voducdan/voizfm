@@ -1,3 +1,6 @@
+// import next
+import Head from 'next/head';
+
 // import reduc
 import { Provider } from 'react-redux';
 import store from '../../src/redux/store';
@@ -9,8 +12,20 @@ import PlaylistDetail from '../../src/components/PlaylistDetail/PlaylistDetail'
 import API from '../../src/services/api';
 
 const PlaylistDetailPage = ({ playlist }) => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
     return (
         <Provider store={store}>
+            <Head>
+                <title>{playlist?.name}</title>
+                <meta property="og:url" content={url} />
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content={playlist?.name} />
+                <meta
+                    property="og:description"
+                    content={playlist?.description}
+                />
+                <meta property="og:image" content={playlist?.avatar?.thumb_url} />
+            </Head>
             <PlaylistDetail playlistFromAPI={playlist} />
         </Provider>
     )

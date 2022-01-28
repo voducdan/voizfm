@@ -1,6 +1,3 @@
-// import next
-import Head from 'next/head';
-
 // import react
 import { useState, useEffect } from 'react';
 
@@ -399,17 +396,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                 position: 'relative'
             }}
         >
-            <Head>
-                <title>{playlist?.name}</title>
-                <meta property="og:url" content={url} />
-                <meta property="og:type" content="website" />
-                <meta property="og:title" content={playlist?.name} />
-                <meta
-                    property="og:description"
-                    content={playlist?.description}
-                />
-                <meta property="og:image" content={playlist?.avatar?.thumb_url} />
-            </Head>
+
             <Box
                 sx={{
                     position: 'absolute',
