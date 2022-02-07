@@ -9,15 +9,6 @@ export default class API {
         this.api_token = getToken();
         this.client = null;
         this.base_url = `${process.env.NEXT_PUBLIC_API_PROTOCAL}://${process.env.NEXT_PUBLIC_BASE_URL}`;
-        axios.interceptors.response.use(response => {
-            // Do something with response data
-            console.log(response)
-            return response;
-        }, (error) => {
-            // Do something with response error
-            // Here "error.response" is undefined. 
-            console.log(error);
-        });
     }
 
     init = (token, xSignature) => {

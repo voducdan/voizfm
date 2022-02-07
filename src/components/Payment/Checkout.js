@@ -138,11 +138,11 @@ export default function Checkout() {
         try {
             const packageIds = selectedItem.map(i => i.id);
             const payload = {
-                "discount_code": discountCode,
+                "discount_code": discountCode || null,
                 "package_type": package_type,
                 "package_id": packageIds,
                 "platform_type": "website",
-                "redirect_url": "http://13.251.106.4/"
+                "redirect_url": "https://voiz.vn/"
             }
             console.log(payload)
             const res = await api.payment(paymentMethod, payload);

@@ -84,7 +84,6 @@ export default function Cart() {
             const res = await api.getCart();
             const data = await res.data.data;
             dispatch(setCart([...data]));
-            console.log(cart)
             cb(data);
         }
 
@@ -146,7 +145,7 @@ export default function Cart() {
     const handlePayment = () => {
         const paymentData = {
             selectedItem: selectedItem,
-            discountCode: isDiscountCodeValid ? discountCode : null,
+            discountCode: isDiscountCodeValid ? discountCode : '',
             package_type: 'playlist',
             totalPrice: totalPrice,
             finalPrice: totalPrice

@@ -12,7 +12,7 @@ function AuthorPage({ author }) {
 export async function getServerSideProps(context) {
     const api = new API();
     const { params } = context;
-    const res = await api.getPlaylistDetail(params.id);
+    const res = await api.getAuthor(params.id);
     const author = res.data.data;
     return {
         props: { author }
