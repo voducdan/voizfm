@@ -49,8 +49,8 @@ const PlaylistAudioCount = (props) => {
     )
 }
 
-export default function Author({ author }) {
-    console.log(author)
+export default function Author(props) {
+    console.log(props)
     const api = new API();
 
     const router = useRouter();
