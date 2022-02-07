@@ -125,11 +125,8 @@ export default function PlatlistDetail({ playlistFromAPI }) {
 
     useEffect(() => {
         async function fetchPlaylist() {
-            // const res = await api.getPlaylistDetail(id);
-            // const data = res.data.data;
             setPlaylist(playlistFromAPI);
             const playlistTrailer = playlistFromAPI.playlist_trailers.length > 0 ? playlistFromAPI.playlist_trailers[0]['file_url'] : '';
-            // setPlaylist(data);
             setContentRating(playlistFromAPI.playlist_rating.content_stars);
             setAudioTrailerUrl(playlistTrailer);
         }

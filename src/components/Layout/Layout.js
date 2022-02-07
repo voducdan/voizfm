@@ -45,7 +45,7 @@ function Layout(props) {
 
     useEffect(() => {
         function checkIncludeFooter() {
-            if (EXCLUDE_FOOTER.some(e => e.test(location.pathname))) {
+            if (EXCLUDE_FOOTER.some(e => e.test(location.asPath))) {
                 setIncludeFooter(false);
             } else {
                 setIncludeFooter(true);
@@ -61,8 +61,8 @@ function Layout(props) {
     }, [anchorSearchElId]);
 
     const openPlayBar = () => {
-        const playAudioPathRegex = new RegExp('^/audio-play/[0-9]+$');
-        if (playAudioPathRegex.test(location.pathname)) {
+        const playAudioPathRegex = new RegExp('^/audio-play/[0-9]+/$');
+        if (playAudioPathRegex.test(location.asPath)) {
             if (!isSm) {
                 return true
             }

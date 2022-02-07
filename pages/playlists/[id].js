@@ -36,11 +36,10 @@ const PlaylistDetailPage = ({ playlist }) => {
 export async function getServerSideProps(context) {
     const api = new API();
     const { params } = context;
-    console.log(params)
     const res = await api.getPlaylistDetail(params.id);
     const playlist = res.data.data;
     return {
-        props: { playlist }, // will be passed to the page component as props
+        props: { playlist }
     }
 }
 

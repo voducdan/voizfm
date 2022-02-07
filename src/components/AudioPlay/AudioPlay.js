@@ -30,10 +30,6 @@ import InfoLabel from '../../components/Shared/InfoLabel';
 import InfoValue from '../../components/Shared/InfoValue';
 import ShareModal from '../../components/Shared/ShareModal';
 
-
-// import services
-import API from '../../services/api';
-
 // import icons
 import { Share } from '../../components/Icons/index';
 
@@ -43,13 +39,14 @@ import { SCREEN_BREAKPOINTS, COLORS, TEXT_STYLE } from '../../utils/constants';
 import useWindowSize from '../../utils/useWindowSize';
 import convertSecondsToReadableString from '../../utils/convertSecondsToReadableString';
 
-export default function AudioPlay() {
-    const api = new API();
+export default function AudioPlay({ audio }) {
 
     const playing = useSelector(selectPlayAudio);
-    const { id } = useRouter().query;
 
-    const [audio, setAudio] = useState({})
+    const router = useRouter();
+
+    const [url, setUrl] = useState('');
+    const [id, setId] = useState(null);
     const [openShareModal, setOpenShareModal] = useState(false);
 
     const windowSize = useWindowSize()
@@ -58,22 +55,19 @@ export default function AudioPlay() {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        async function fetchAudio() {
-            try {
-                const res = await api.getAudio(id)
-                if (res.status === 200) {
-                    const data = await res.data.data;
-                    setAudio(data);
-                    dispatch(setAudioData(data));
-                }
-            }
-            catch (err) {
-                console.log(err);
-            }
-        }
+        dispatch(setAudioData(audio));
+    }, []);
 
-        fetchAudio();
+    useEffect(() => {
+        if (id) {
+            setUrl(window.location.href);
+        }
     }, [id]);
+
+    useEffect(() => {
+        const { id } = router.query;
+        setId(id);
+    }, [router.query]);
 
     const handleOpenShareModal = () => {
         setOpenShareModal(true);
@@ -100,7 +94,7 @@ export default function AudioPlay() {
                 <Box onClick={handleOpenShareModal}>
                     <Share bgfill='none' fill='none' stroke={COLORS.contentIcon} />
                 </Box>
-                <ShareModal url={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/audio-play/${id}`} isSm={isSm} open={openShareModal} setOpen={setOpenShareModal}></ShareModal>
+                <ShareModal url={url} isSm={isSm} open={openShareModal} setOpen={setOpenShareModal}></ShareModal>
                 <ExpandMoreIcon sx={{ color: COLORS.contentIcon }} />
             </Box>
             <Box
