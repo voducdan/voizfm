@@ -14,7 +14,6 @@ export async function getServerSideProps(context) {
     const { params } = context;
     const res = await api.getAuthor(params.id);
     const author = res.data.data;
-    console.log(author)
     return {
         props: { author }
     }

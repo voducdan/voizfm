@@ -12,9 +12,9 @@ const PaymentUI = (props) => {
     const { method, paymentInfo } = props;
     switch (method) {
         case 'shopee':
-            return <img src={paymentInfo.url} alt="qrcode" />;
+            return <img src={paymentInfo?.url || ''} alt="qrcode" />;
         default:
-            return <img src={paymentInfo.url} alt="qrcode" />;
+            return <img src={paymentInfo?.url || ''} alt="qrcode" />;
     }
 }
 

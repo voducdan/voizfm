@@ -224,6 +224,7 @@ export default function DiscoveryContent() {
         }
         else {
             const tmpPlaylists = discoveryList.filter(i => i.channel.id === Number(code));
+            console.log(tmpPlaylists)
             setShowedDiscoveryList([...tmpPlaylists]);
         }
     }
