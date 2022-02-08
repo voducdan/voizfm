@@ -1,5 +1,5 @@
 // import components
-import BookRequest from '../../src/components/Bookrequest/Bookrequest';
+import BookRequest from '../../src/components/BookRequest/BookRequest';
 
 const BookrequestPage = () => {
     return (
