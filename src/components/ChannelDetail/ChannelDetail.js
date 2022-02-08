@@ -57,13 +57,15 @@ const PlaylistAudioCount = (props) => {
     )
 }
 
-export default function ChannelDetail() {
+export default function ChannelDetail({ channelFromAPI }) {
 
     const api = new API();
     const windowSize = useWindowSize();
+    const router = useRouter();
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
     const { id } = useRouter().query;
-    const [channel, setChannel] = useState({});
+    const [channel, setChannel] = useState(channelFromAPI);
+    const [url, setUrl] = useState('');
     const [playlists, setPlaylists] = useState([]);
     const [audios, setAudios] = useState([]);
     const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -71,11 +73,6 @@ export default function ChannelDetail() {
     const [openShareModal, setOpenShareModal] = useState(false);
 
     useEffect(() => {
-        async function fetchChannel() {
-            const res = await api.getChannel(id);
-            const data = await res.data.data;
-            setChannel(data);
-        }
         async function fetchPlaylists() {
             const res = await api.getChannelPlaylists(id);
             const data = await res.data.data;
@@ -87,10 +84,14 @@ export default function ChannelDetail() {
             setAudios(data);
         }
 
-        fetchChannel();
         fetchPlaylists();
         fetchAudios();
-    }, [])
+    }, []);
+
+
+    useEffect(() => {
+        setUrl(window.location.href);
+    }, [router.query]);
 
     const handleBookmark = () => {
         async function bookmarkChannel(cb) {
@@ -233,7 +234,7 @@ export default function ChannelDetail() {
                             <IconButton onClick={handleOpenShareModal}>
                                 <ShareOutlinedIcon sx={{ color: COLORS.contentIcon }} />
                             </IconButton>
-                            <ShareModal url={`${window.location.href}`} isSm={isSm} open={openShareModal} setOpen={setOpenShareModal}></ShareModal>
+                            <ShareModal url={url} isSm={isSm} open={openShareModal} setOpen={setOpenShareModal}></ShareModal>
                             <Button
                                 onClick={handleBookmark}
                                 sx={{

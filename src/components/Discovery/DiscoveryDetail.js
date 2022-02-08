@@ -176,12 +176,11 @@ const CommentItem = (props) => {
     )
 }
 
-export default function DiscoveryDetail() {
+export default function DiscoveryDetail({ discovery }) {
     const api = new API();
 
     const windowSize = useWindowSize();
     const commentInputRef = useRef();
-    const [discovery, setDiscovery] = useState({});
     const [comments, setComments] = useState([]);
     const [commentContent, setCommentContent] = useState('');
     const [commentPage, setCommentPage] = useState(0);
@@ -190,18 +189,6 @@ export default function DiscoveryDetail() {
 
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
     const coverImgHeight = isSm ? 200 : 380;
-    const pageLimit = 10;
-
-    useEffect(() => {
-
-        async function fetchDiscoveryDetail() {
-            const res = await api.getDiscovery(id, commentPage, pageLimit);
-            const data = await res.data.data;
-            setDiscovery(data);
-        };
-
-        fetchDiscoveryDetail();
-    }, []);
 
     useEffect(() => {
         async function fetchDiscoveryComment() {

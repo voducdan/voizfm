@@ -172,6 +172,7 @@ export default function PlaylistHistory() {
                     playlistHistories.map(i => (
                         <PlaylistThumnail
                             key={i?.id}
+                            id={i?.id}
                             name={i.name}
                             src={i?.avatar?.thumb_url}
                             authors={i?.authors}
@@ -185,6 +186,7 @@ export default function PlaylistHistory() {
                     audiotHistories.map(i => (
                         <PlaylistThumnail
                             key={i?.id}
+                            id={i?.id}
                             name={i.name}
                             src={i?.avatar?.thumb_url}
                             authors={i?.author?.name}

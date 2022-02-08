@@ -2,3 +2,13 @@
     justify-content: flex-start;
     align-items: center
 }
+
+.random-playlist-link-mb {
+    width: 100%;
+    text-decoration: none;
+}
+
+.random-playlist-link-desktop {
+    width: calc(50% - 14px);
+    text-decoration: none
+}

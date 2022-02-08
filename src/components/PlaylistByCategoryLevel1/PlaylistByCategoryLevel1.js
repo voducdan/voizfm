@@ -132,7 +132,7 @@ const RandomPlayList = (props) => {
 
 const NUM_PLAYLIST_RANDOM = 12;
 
-function AudioBook() {
+function AudioBook({ router }) {
 
     const api = new API();
     const pathname = router.pathname;
@@ -306,14 +306,14 @@ function AudioBook() {
                 {
                     playlistsRandom.map(i => (
                         <Link
-                            href={`/playlists/${i.id}`}
-                            style={{
-                                width: isSm ? '100%' : 'calc(50% - 14px)',
-                                textDecoration: 'none'
-                            }}
-                            key={i.id}
+                            href={`/playlists/${i?.id}`}
+                            key={i?.id}
                         >
-                            <RandomPlayList data={i} isSm={isSm} />
+                            <a
+                                className={isSm ? 'random-playlist-link-mb' : 'random-playlist-link-desktop'}
+                            >
+                                <RandomPlayList data={i} isSm={isSm} />
+                            </a>
                         </Link>
                     ))
                 }

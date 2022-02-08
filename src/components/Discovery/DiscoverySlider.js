@@ -28,8 +28,7 @@ export default function DiscoverySlider() {
             }}
             style={{
                 margin: isSm ? '16px' : '32px 48px',
-                paddingTop: '32px',
-                overflow: 'visible',
+                paddingTop: '32px'
             }}>
             {imagesList.map((item, idx) => (
                 <SwiperSlide key={idx}>

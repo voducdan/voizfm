@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 
 // import next router
-import { useRouter } from 'next/router';
+import { useRouter, withRouter } from 'next/router';
 
 // import next link
 import Link from 'next/link';
@@ -36,8 +36,8 @@ import formatDuration from '../../utils/formatDuration';
 import API from '../../services/api';
 
 function useQuery() {
-    const { search } = useRouter();
-    return useMemo(() => new URLSearchParams(search), [search]);
+    const { query } = useRouter();
+    return useMemo(() => new URLSearchParams(query), [query]);
 }
 
 const tabs = [

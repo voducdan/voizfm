@@ -110,7 +110,7 @@ export default function Channel() {
             const data = await res.data.data;
         }
 
-        bookmarkChannel();
+        bookmarkChannel(channelId);
         const channelToBookmarkIdx = recommandedChannels.findIndex(i => i.id === channelId);
         const updatedRecommandedChannels = [...recommandedChannels];
         updatedRecommandedChannels[channelToBookmarkIdx]['is_bookmark'] = !is_bookmark;

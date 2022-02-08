@@ -232,14 +232,20 @@ function Header({ router }) {
         if (keyCode === 13) {
             setShowHeaderItems(true);
             setSearchStatus();
-            navigate.push(`/search?searchKey=${searchKeyword}`);
+            navigate.push({
+                pathname: '/search',
+                query: { searchKey: searchKeyword }
+            });
         }
     }
 
     const handleClickSearchBtn = () => {
         setShowHeaderItems(true);
         setSearchStatus();
-        navigate.push(`/search?searchKey=${searchKeyword}`);
+        navigate.push({
+            pathname: '/search',
+            query: { searchKey: searchKeyword }
+        });
     }
 
     const handleClearSearchKeyword = () => {
