@@ -13,7 +13,7 @@ import API from '../../src/services/api';
 
 const PlaylistDetailPage = ({ playlist }) => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
-    return (
+    return playlist ? (
         <Provider store={store}>
             <Head>
                 <title>{playlist?.name}</title>
@@ -30,14 +30,20 @@ const PlaylistDetailPage = ({ playlist }) => {
             </Head>
             <PlaylistDetail playlistFromAPI={playlist} />
         </Provider>
-    )
+    ) : ''
 }
 
 export async function getServerSideProps(context) {
     const api = new API();
     const { params } = context;
-    const res = await api.getPlaylistDetail(params.id);
-    const playlist = res.data.data;
+    let playlist = null;
+    try {
+        const res = await api.getPlaylistDetail(params.id);
+        playlist = res.data.data;
+    }
+    catch (err) {
+        console.log(err.message)
+    }
     return {
         props: { playlist }
     }

@@ -385,7 +385,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
         return ((clientWidth - sidePadding * 2) / 3) - 3.5;
     }
 
-    return (
+    return Object.keys(playlistFromAPI).length > 0 ? (
         <Box
             sx={{
                 ...flexStyle('center', 'center'),
@@ -1035,4 +1035,5 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             </Dialog>
         </Box >
     )
+        : ''
 }
