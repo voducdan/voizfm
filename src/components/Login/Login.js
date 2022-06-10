@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 // import next router
 import { useRouter } from 'next/router';
 
+// import universal cookie
+import Cookies from 'universal-cookie';
+
 // import redux reducer, actions
 import { useSelector, useDispatch } from 'react-redux';
 import { selectOpenLogin, handleCloseLogin, setOpenLogin } from '../../redux/openLogin';
@@ -92,6 +95,7 @@ const textFieldStyle = {
 
 export default function Login() {
     const api = new API();
+    const cookies = new Cookies();
 
     const navigate = useRouter();
 
@@ -109,6 +113,7 @@ export default function Login() {
     const [error, setError] = useState('');
     const [userInfo, setUserInfo] = useState({});
     const [accessToken, setAccessToken] = useState(null);
+    const [uuid, setUuid] = useState(null);
     const [isGoogle, setIsGoogle] = useState(false);
     const [isFacebook, setIsFacebook] = useState(false);
     const [otpCountDown, setOtpCountDown] = useState('');
@@ -187,7 +192,18 @@ export default function Login() {
         }
         catch (err) {
             setHasError(true);
-            setError(err.message);
+            const errList = err.response.data.error;
+            if (errList instanceof Object) {
+                let errMessage = '';
+                for (let e in errList) {
+                    const key = Object.keys(errList[e])[0];
+                    const value = errList[e][key]
+                    errMessage += `${value} \n`
+                }
+                setError(errMessage || 'Đã xảy ra lỗi, vui lòng thử lại!');
+                return;
+            }
+            setError(errList);
         }
     }
 
@@ -214,6 +230,7 @@ export default function Login() {
             setAccessToken(accessToken);
             if (data.data['verification']) {
                 dispatch(setToken(accessToken));
+                cookies.set('token', accessToken);
                 setStep(4);
                 return;
             }
@@ -252,6 +269,7 @@ export default function Login() {
             }
             setStep(4);
             dispatch(setToken(accessToken));
+            cookies.set('token', accessToken);
         }
         catch (err) {
             setHasError(true);
@@ -261,7 +279,7 @@ export default function Login() {
                 for (let e in errList) {
                     const key = Object.keys(errList[e])[0];
                     const value = errList[e][key]
-                    errMessage += `${value} \n`
+                    errMessage += `${key ? key.replace(/(^\w|\s\w)(\S*)/g, (_, m1, m2) => m1.toUpperCase() + m2.toLowerCase()) : ''} ${value} \n`
                 }
                 setError(errMessage || 'Đã xảy ra lỗi, vui lòng thử lại!');
                 return;
@@ -298,6 +316,20 @@ export default function Login() {
             const res = await api.loginFacebook(payload);
             const data = await res.data;
             setAccessToken(data.data.access_token);
+            if (data.verification || phoneNumber) {
+                try {
+                    await api.verifyAccount({ 'uuid': data.data.uuid });
+                }
+                catch (err) {
+                    console.log(err)
+                }
+                dispatch(setToken(accessToken));
+                cookies.set('token', accessToken);
+                setStep(null);
+                dispatch(handleCloseLogin());
+                return;
+            }
+            setUuid(data.data.uuid);
             setStep(5);
             setIsFacebook(true);
         }
@@ -309,18 +341,33 @@ export default function Login() {
     }
     const responseGoogleSuccess = async (response) => {
         try {
-            const { profileObj, tokenId } = response;
+            console.log(response)
+            const { profileObj, googleId } = response;
             const payload = {
                 "first_name": profileObj.givenName,
                 "last_name": profileObj.familyName,
                 "email": profileObj.email,
                 "birthday": profileObj.birthday || null,
-                "oauth2_id": tokenId,
+                "oauth2_id": googleId,
                 "avatar_url": profileObj.imageUrl
             }
             const res = await api.loginGoogle(payload);
             const data = await res.data;
             setAccessToken(data.data.access_token);
+            if (data.verification || phoneNumber) {
+                try {
+                    await api.verifyAccount({ 'uuid': data.data.uuid });
+                }
+                catch (err) {
+                    console.log(err)
+                }
+                dispatch(setToken(accessToken));
+                cookies.set('token', accessToken);
+                setStep(null);
+                dispatch(handleCloseLogin());
+                return;
+            }
+            setUuid(data.data.uuid);
             setStep(5);
             setIsGoogle(true);
         }
@@ -349,14 +396,24 @@ export default function Login() {
         return;
     }
 
-    const handleSkipPhone = () => {
+    const handleSkipPhone = async () => {
+        try {
+            await api.verifyAccount({ 'uuid': uuid });
+        }
+        catch (err) {
+            console.log(err)
+        }
         dispatch(setToken(accessToken));
+        cookies.set('token', accessToken);
         setStep(null);
         dispatch(handleCloseLogin());
     }
 
     const handleReviewOtp = () => {
-        onEnterPhone();
+        if (!otpCountDown) {
+            onEnterPhone();
+        }
+
     }
 
     return (
@@ -522,7 +579,12 @@ export default function Login() {
                                                 color: COLORS.white,
                                                 ...(!isSm ? TEXT_STYLE.h2 : TEXT_STYLE.h3)
                                             }
-                                        }} id="phone-number" placeholder="987654321" variant="outlined" onChange={onPhoneChange} />
+                                        }}
+                                        id="phone-number"
+                                        placeholder="987654321"
+                                        variant="outlined"
+                                        autoComplete="off"
+                                        onChange={onPhoneChange} />
                                 </Box>
                                 <CustomDisabledButton
                                     disabled={!isPhoneValid}
@@ -561,7 +623,6 @@ export default function Login() {
                                     render={renderProps => (
                                         <Button
                                             onClick={renderProps.onClick}
-                                            disabled={renderProps.disabled}
                                             sx={{
                                                 textTransform: 'none',
                                                 height: '48px'
@@ -575,7 +636,6 @@ export default function Login() {
                                     )}
                                     cookiePolicy={'single_host_origin'}
                                     clientId={`${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}`}
-                                    buttonText="Google"
                                     onSuccess={responseGoogleSuccess}
                                     onFailure={responseGoogleFalure}
                                 />
@@ -611,7 +671,13 @@ export default function Login() {
                                         ...(!isSm ? TEXT_STYLE.h2 : TEXT_STYLE.h3),
                                         textAlign: 'center'
                                     }
-                                }} id="phone-number" placeholder="123456" variant="outlined" onChange={onOTPChange} />
+                                }}
+                                id="phone-number"
+                                placeholder="123456"
+                                variant="outlined"
+                                autoComplete="off"
+                                onChange={onOTPChange}
+                            />
                             {
                                 isOTPWrong && (
                                     <Typography
@@ -731,7 +797,9 @@ export default function Login() {
                                         name='first_name'
                                         onChange={handleChangeUserInfo}
                                         value={userInfo.first_name || ''}
-                                        placeholder="Họ" variant="outlined"
+                                        placeholder="Họ"
+                                        variant="outlined"
+                                        autoComplete="off"
                                     />
                                     <TextField
                                         sx={{
@@ -740,7 +808,9 @@ export default function Login() {
                                         name='last_name'
                                         onChange={handleChangeUserInfo}
                                         value={userInfo.last_name || ''}
-                                        placeholder="Tên" variant="outlined"
+                                        placeholder="Tên"
+                                        variant="outlined"
+                                        autoComplete="off"
                                     />
                                 </Box>
                                 <Box
@@ -764,7 +834,9 @@ export default function Login() {
                                         name='email'
                                         onChange={handleChangeUserInfo}
                                         value={userInfo.email || ''}
-                                        placeholder="Địa chỉ email" variant="outlined"
+                                        placeholder="Địa chỉ email"
+                                        variant="outlined"
+                                        autoComplete="off"
                                     />
                                 </Box>
                             </Box>
@@ -981,7 +1053,12 @@ export default function Login() {
                                             color: COLORS.white,
                                             ...(!isSm ? TEXT_STYLE.h2 : TEXT_STYLE.h3)
                                         }
-                                    }} id="phone-number" placeholder="987654321" variant="outlined" onChange={onPhoneChange} />
+                                    }} id="phone-number"
+                                    placeholder="987654321"
+                                    variant="outlined"
+                                    autoComplete="off"
+                                    onChange={onPhoneChange}
+                                />
                             </Box>
                         </Box>
                     </DialogContent>

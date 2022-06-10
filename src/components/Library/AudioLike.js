@@ -17,11 +17,10 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 // import others components
 import PlaylistThumnail from '../../components/Shared/PlaylistThumbnail'
+import { AccessTime, Trash } from '../../components/Icons/index'
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
@@ -61,7 +60,7 @@ const AudioDuration = (props) => {
                 columnGap: '6px'
             }}
         >
-            <AccessTimeIcon sx={{ color: COLORS.contentIcon, width: isSm ? '12px' : '16px', height: isSm ? '12px' : '16px' }} />
+            <AccessTime />
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
@@ -250,7 +249,7 @@ export default function AudioLike() {
                 }}
             >
                 {
-                    !isDeleteMode && (
+                    (!isDeleteMode && audioLikes.length > 0) && (
                         <Button
                             onClick={handleGoDelete}
                             sx={{
@@ -258,7 +257,7 @@ export default function AudioLike() {
                                 color: COLORS.white,
                                 textTransform: 'none'
                             }}
-                            endIcon={<DeleteIcon fontSize="small" sx={{ color: COLORS.VZ_Text_content }} />}
+                            endIcon={<Trash fontSize="small" />}
                         >Xóa tất cả</Button>
                     )
                 }
@@ -295,7 +294,7 @@ export default function AudioLike() {
                                 color: COLORS.white,
                                 textTransform: 'none'
                             }}
-                        >Hoàn thành</Button>
+                        >Xoá</Button>
                     )
                 }
             </Box>
@@ -339,6 +338,8 @@ export default function AudioLike() {
                                     authors={i?.author?.name}
                                     hasDelete={true}
                                     promotion={i?.promotion}
+                                    isAudio={true}
+                                    playlistId={i?.playlist_id}
                                     handleConfirmDeleteModalOpen={handleClickDeleteSingleAudio}
                                     children={<AudioDuration isSm={isSm} duration={i?.duration} />}
                                 />

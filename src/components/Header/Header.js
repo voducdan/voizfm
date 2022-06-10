@@ -1,6 +1,9 @@
 // Import react module
 import { useEffect, useState, useCallback } from 'react';
 
+// import universal cookie
+import Cookies from 'universal-cookie';
+
 // import redux
 import { useSelector, useDispatch } from 'react-redux';
 
@@ -8,15 +11,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setOpen, selectOpenSidebar } from '../../redux/openSidebar';
 import { handleOpenLogin } from '../../redux/openLogin';
 import { setAnchorEl, handleStartSearch, handleStopSearch, setPlaylistResult } from '../../redux/OpenSearch';
-import { selectCart, setCart, selectAddToCartFlag, setAddToCartFlag } from '../../redux/payment';
+import { selectCart, selectAddToCartFlag, setAddToCartFlag } from '../../redux/payment';
 import { setUser, selectUser } from '../../redux/user';
 import { selectToken, removeToken } from '../../redux/token';
 
 // import next router
 import { useRouter, withRouter } from 'next/router';
-
-// import next link
-import Link from 'next/link';
 
 // Import MUI component
 import { styled } from '@mui/material/styles';
@@ -41,7 +41,6 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 // Import utils
@@ -57,6 +56,7 @@ import _debounce from 'lodash/debounce';
 // import service
 import API from '../../services/api';
 import { flexStyle } from '../../utils/flexStyle';
+import { getAudioListenings, removeAudioListenings } from '../../services/audioListenning';
 
 const SearchBtn = (idx) => {
     return (
@@ -88,19 +88,21 @@ const BookmarkIcon = (props) => {
 }
 
 const CartIcon = (props) => {
-    const { handleCloseSidebarWhenClickAccountIcon, numItemsInCart, idx, addToCartFlag } = props;
+    const { handleClickCartIcon, numItemsInCart, idx, addToCartFlag } = props;
     return (
-        <Link
-            onClick={handleCloseSidebarWhenClickAccountIcon}
-            href={`/cart`}
+        <Box
+            onClick={handleClickCartIcon}
             key={idx}
+            sx={{
+                cursor: 'pointer'
+            }}
         >
             <Tooltip open={Boolean(addToCartFlag)} title="Thêm vào giỏ hàng thành công!">
                 <Badge badgeContent={numItemsInCart || 0} color="error">
-                    <ShoppingCartOutlinedIcon sx={{ color: COLORS.contentIcon }} />
+                    <Cart />
                 </Badge>
             </Tooltip>
-        </Link>
+        </Box>
     )
 }
 
@@ -143,6 +145,7 @@ const AppBar = styled(MuiAppBar, {
 
 function Header({ router }) {
     const api = new API();
+    const cookies = new Cookies();
     const windowSize = useWindowSize();
     const pathname = router.pathname;
     const search = router.search;
@@ -162,6 +165,7 @@ function Header({ router }) {
     const [userPaneAnchorEl, setUserPaneAnchorEl] = useState(null);
 
     const openUserPane = Boolean(userPaneAnchorEl);
+    const audioListenings = getAudioListenings();
 
     const headerItems = [BookmarkIcon, CartIcon, userAvt];
 
@@ -264,7 +268,7 @@ function Header({ router }) {
     const onSearchInput = (e) => {
         const { value } = e.target;
         setSearchKeyword(value);
-        if (value === '') {
+        if (!value.trim()) {
             dispatch(handleStopSearch());
         }
         else {
@@ -275,22 +279,32 @@ function Header({ router }) {
 
     const handleSearchKeyUp = (e) => {
         const { keyCode } = e;
+        const trimedSearchKey = searchKeyword.trim();
         if (keyCode === 13) {
+            if (!trimedSearchKey) {
+                return;
+            }
             setShowHeaderItems(true);
             setSearchStatus();
+            e.target.blur();
             navigate.push({
                 pathname: '/search',
-                query: { searchKey: searchKeyword }
+                query: { searchKey: trimedSearchKey }
             });
         }
     }
 
     const handleClickSearchBtn = () => {
+        const trimedSearchKey = searchKeyword.trim();
+        if (!trimedSearchKey) {
+            return;
+        }
         setShowHeaderItems(true);
         setSearchStatus();
+
         navigate.push({
             pathname: '/search',
-            query: { searchKey: searchKeyword }
+            query: { searchKey: trimedSearchKey }
         });
     }
 
@@ -329,27 +343,53 @@ function Header({ router }) {
     const debounceOnSearch = useCallback(_debounce(async (type, keyword) => {
         const res = await api.getSearchResults(type, keyword);
         const data = await res.data.data;
+
         dispatch(setPlaylistResult(data));
-    }, 300), []);
+    }, 100), []);
 
     const handleCloseSidebarWhenClickAccountIcon = (e) => {
         dispatch(setOpen(false));
         setUserPaneAnchorEl(e.currentTarget);
     };
 
+    const handleClickCartIcon = () => {
+        if (!user) {
+            dispatch(handleOpenLogin());
+            return;
+        }
+        router.push('/cart')
+    }
+
     const handleGoToAccountPage = () => {
         setUserPaneAnchorEl(null);
         router.push('/account');
     }
 
-    const handleLogout = () => {
-        dispatch(removeToken());
-        setUserPaneAnchorEl(null);
-        window.location.href = '/';
+    const handleLogout = async () => {
+        try {
+            if (user) {
+                await api.trackingAudio(audioListenings);
+                cookies.remove('token');
+                dispatch(removeToken());
+                removeAudioListenings();
+            }
+            setUserPaneAnchorEl(null);
+            window.location.href = '/';
+        }
+        catch (err) {
+            console.log(err)
+        }
     }
 
     return (
-        <AppBar position="fixed" open={openSidebar} windowwidth={windowSize.width}>
+        <AppBar
+            position="fixed"
+            sx={{
+                boxShadow: 'none',
+                border: `1px solid ${COLORS.blackStroker}`
+            }}
+            open={openSidebar}
+            windowwidth={windowSize.width}>
             <Popover
                 open={openUserPane}
                 anchorEl={userPaneAnchorEl}
@@ -476,8 +516,12 @@ function Header({ router }) {
                             onKeyUp={handleSearchKeyUp}
                             id="input-search"
                             placeholder="Tìm kiếm"
+                            autoComplete="off"
                             value={searchKeyword}
-                            sx={{ color: COLORS.white }}
+                            sx={{
+                                color: COLORS.white,
+                                ...TEXT_STYLE.content1
+                            }}
                             disableUnderline
                             startAdornment={
                                 <InputAdornment
@@ -517,7 +561,17 @@ function Header({ router }) {
                                 }}
                             >
                                 {headerItems.map((item, idx) => (
-                                    item({ numItemsInCart, idx, avtSrc, addToCartFlag, onOpenLogin, handleCloseSidebarWhenClickAccountIcon })
+                                    item(
+                                        {
+                                            numItemsInCart,
+                                            idx,
+                                            avtSrc,
+                                            addToCartFlag,
+                                            onOpenLogin,
+                                            handleCloseSidebarWhenClickAccountIcon,
+                                            handleClickCartIcon
+                                        }
+                                    )
                                 ))}
                             </Box>
                         )

@@ -40,6 +40,8 @@ const Tab = (props) => {
                 boxSizing: 'border-box',
                 columnGap: '16px',
                 bgcolor: (id === tab) ? COLORS.bg3 : COLORS.bg2,
+                cursor: 'pointer',
+                borderRadius: isSm ? '4px' : '6px',
                 ...(isSm && { flexDirection: 'column', rowGap: '8px' })
             }}
         >
@@ -119,7 +121,7 @@ export default function Library() {
     return (
         <Box sx={{
             width: '100%',
-            p: isSm ? '16px 16px 32px 16px' : '16px 49px',
+            p: isSm ? '16px 16px 32px 16px' : '16px 43px',
             boxSizing: 'border-box'
         }}
         >

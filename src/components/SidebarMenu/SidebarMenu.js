@@ -5,12 +5,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectOpenSidebar, setOpen } from '../../redux/openSidebar';
 import { selectToken } from '../../redux/token';
+import { setOpenLogin } from '../../redux/openLogin';
+import { selectUser } from '../../redux/user';
+import { selectOpenPlayBar } from '../../redux/playAudio';
 
 // import next router
 import { useRouter } from 'next/router';
-
-// import next link
-import Link from 'next/link';
 
 // import MUI components
 import {
@@ -22,7 +22,11 @@ import {
     ListItemText,
     Typography,
     Button,
-    Box
+    Box,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText
 } from '@mui/material';
 import HeadphonesOutlinedIcon from '@mui/icons-material/HeadphonesOutlined';
 
@@ -39,25 +43,33 @@ import {
     SummaryBook,
     ChildrenBook,
     Book
-} from '../Icons/index'
+} from '../Icons/index';
 
 // import images
 import Logo from '../Logo/Logo';
 
 // import utils
-import { COLORS, TEXT_STYLE, FONT_COLOR, DRAWER_WIDTH, HEADER_HEIGHT, SCREEN_BREAKPOINTS, HEADER_HEIGHT_MB } from '../../utils/constants'
-import useWindowSize from '../../utils/useWindowSize'
+import { COLORS, TEXT_STYLE, FONT_COLOR, DRAWER_WIDTH, HEADER_HEIGHT, SCREEN_BREAKPOINTS, HEADER_HEIGHT_MB } from '../../utils/constants';
+import { flexStyle } from '../../utils/flexStyle';
+import useWindowSize from '../../utils/useWindowSize';
 
-const RequestsBook = () => (
-    <Button sx={{
-        backgroundColor: COLORS.main,
-        borderRadius: '33px',
-        margin: '13.5px 37px 31px 25px',
-        height: '48px',
-        width: '188px',
-        textTransform: 'inherit',
-        ...TEXT_STYLE.content1
-    }} variant="contained" startIcon={Book()}>
+const RequestsBook = ({ isSm, openPlaybar, handleClickRequestBook }) => (
+    <Button
+        onClick={handleClickRequestBook}
+        sx={{
+            backgroundColor: COLORS.main,
+            borderRadius: '33px',
+            margin: '13.5px 37px 31px 25px',
+            height: '48px',
+            width: '188px',
+            textTransform: 'inherit',
+            ...TEXT_STYLE.content1,
+            ...(openPlaybar && {
+                mb: isSm ? '300px' : '120px',
+            })
+        }}
+        variant="contained"
+        startIcon={Book()}>
         Đề nghị sách
     </Button>
 )
@@ -68,11 +80,13 @@ export default function SidebarMenu() {
     const isSm = windowSize.width > SCREEN_BREAKPOINTS.sm ? false : true;
     const navigate = useRouter();
     const sidebar = useRef(null);
-    const [current, setCurrent] = useState(null);
     const [navigatorLink, setNavigatorLink] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [openIsVip, setOpenIsVip] = useState(false);
     const openSidebar = useSelector(selectOpenSidebar);
     const token = useSelector(selectToken);
+    const user = useSelector(selectUser);
+    const openPlaybar = useSelector(selectOpenPlayBar);
     const dispatch = useDispatch();
 
     let open = openSidebar
@@ -94,12 +108,12 @@ export default function SidebarMenu() {
                     text: 'Up VIP',
                     url: 'up-vip'
                 },
-                {
-                    id: 3,
-                    icon: Discover,
-                    text: 'Cộng đồng',
-                    url: 'discoveries'
-                },
+                // {
+                //     id: 3,
+                //     icon: Discover,
+                //     text: 'Cộng đồng',
+                //     url: 'discoveries'
+                // },
                 {
                     id: 4,
                     icon: Library,
@@ -110,11 +124,11 @@ export default function SidebarMenu() {
                     id: 5,
                     icon: Adward,
                     text: 'Bảng xếp hạng',
-                    url: 'playlists/rankings'
+                    url: 'play/rankings'
                 },
                 {
                     id: 6,
-                    icon: () => (<HeadphonesOutlinedIcon />),
+                    icon: ({ fill }) => (<HeadphonesOutlinedIcon sx={{ color: fill }} />),
                     text: 'Nội dung đang nghe',
                     url: 'listenings'
                 }
@@ -134,12 +148,12 @@ export default function SidebarMenu() {
                     text: 'Up VIP',
                     url: 'up-vip'
                 },
-                {
-                    id: 3,
-                    icon: Discover,
-                    text: 'Cộng đồng',
-                    url: 'discoveries'
-                },
+                // {
+                //     id: 3,
+                //     icon: Discover,
+                //     text: 'Cộng đồng',
+                //     url: 'discoveries'
+                // },
                 {
                     id: 4,
                     icon: Library,
@@ -150,7 +164,7 @@ export default function SidebarMenu() {
                     id: 5,
                     icon: Adward,
                     text: 'Bảng xếp hạng',
-                    url: 'playlists/rankings'
+                    url: 'play/rankings'
                 }
             ];
         }
@@ -195,12 +209,35 @@ export default function SidebarMenu() {
         const id = Number(e.currentTarget.id);
         const allItems = [...navigatorLink, ...categories];
         const item = allItems.filter(i => i.id === id);
-        setCurrent(id);
         if (isSm) {
             dispatch(setOpen(false));
         }
+        if (!user && ['up-vip', 'library'].includes(item[0].url)) {
+            dispatch(setOpenLogin(true));
+            return;
+        }
+        if (item[0].url === 'up-vip' && user.promotion === 'vip') {
+            setOpenIsVip(true);
+            return;
+        }
+
         navigate.push(`/${item[0].url}`);
         e.stopPropagation();
+    }
+
+    const handleClickRequestBook = () => {
+        if (!token) {
+            dispatch(setOpenLogin(true));
+            return;
+        }
+        navigate.push('/book-request')
+    }
+
+    const handleClickLogo = () => {
+        if (isSm) {
+            dispatch(setOpen(false));
+        }
+        navigate.push('/');
     }
 
     return (
@@ -243,23 +280,25 @@ export default function SidebarMenu() {
             open={open}
             ref={sidebar}
         >
-            <Box>
-                <Link
-                    href='/'
-                >
-                    <a>
-                        <Logo windowWidth={windowSize.width} />
-                    </a>
-                </Link>
+            <Box
+                onClick={handleClickLogo}
+                sx={{
+                    cursor: 'pointer'
+                }}
+            >
+                <Logo windowWidth={windowSize.width} />
             </Box>
-            <Divider />
-            <List>
+            <List
+                sx={{
+                    pt: 0
+                }}
+            >
                 {navigatorLink.map(icon => (
                     <Box
                         key={icon.id}
                         sx={{
-                            m: '8px 0',
-                            ...((icon.id === current || navigate.pathname === icon.url) && {
+                            m: icon.id === 1 ? '0 0 8px 0' : '8px 0',
+                            ...((navigate.pathname === '/' + icon.url) && {
                                 bgcolor: COLORS.bg2
                             })
                         }}
@@ -279,12 +318,12 @@ export default function SidebarMenu() {
                                 ...TEXT_STYLE.content1,
                             }}
                             >
-                                {icon.icon({ stroke: (icon.id === current || navigate.pathname === icon.url) ? '#FFFFFF' : '#ACACAC', fill: (icon.id === current || navigate.pathname === icon.url) ? '#FFFFFF' : '#ACACAC' })}
+                                {icon.icon({ stroke: (navigate.pathname === '/' + icon.url) ? '#FFFFFF' : '#ACACAC', fill: (navigate.pathname === '/' + icon.url) ? '#FFFFFF' : '#ACACAC' })}
                             </ListItemIcon>
                             <ListItemText disableTypography primary={<Typography sx={{
                                 color: FONT_COLOR,
                                 ...TEXT_STYLE.content1,
-                                ...((icon.id === current || navigate.pathname === icon.url) && {
+                                ...((navigate.pathname === '/' + icon.url) && {
                                     color: COLORS.white
                                 })
                             }}>{icon.text}</Typography>} />
@@ -299,7 +338,7 @@ export default function SidebarMenu() {
                         key={icon.id}
                         sx={{
                             m: '8px 0',
-                            ...((icon.id === current || navigate.pathname === icon.url) && {
+                            ...((navigate.pathname === '/' + icon.url) && {
                                 bgcolor: COLORS.bg2
                             })
                         }}
@@ -323,7 +362,7 @@ export default function SidebarMenu() {
                             <ListItemText disableTypography primary={<Typography style={{
                                 color: FONT_COLOR,
                                 ...TEXT_STYLE.content1,
-                                ...((icon.id === current || navigate.pathname === icon.url) && {
+                                ...((navigate.pathname === '/' + icon.url) && {
                                     color: COLORS.white
                                 })
                             }}>{icon.text}</Typography>} />
@@ -331,13 +370,44 @@ export default function SidebarMenu() {
                     </Box>
                 ))}
             </List>
-            <Link
-                href='/book-request'
+            <Box>
+                <RequestsBook
+                    isSm={isSm}
+                    openPlaybar={openPlaybar}
+                    handleClickRequestBook={handleClickRequestBook}
+                />
+            </Box>
+            <Dialog
+                open={openIsVip}
+                onClose={() => { setOpenIsVip(false) }}
+                PaperProps={{
+                    style: {
+                        backgroundColor: COLORS.bg1
+                    }
+                }}
             >
-                <a
-                    style={{ textDecoration: 'none' }}
-                ><RequestsBook /></a>
-            </Link>
+                <DialogContent>
+                    <DialogContentText
+                        sx={{
+                            color: COLORS.white
+                        }}
+                    >
+                        Bạn đã là thành viên VIP
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions
+                    sx={{
+                        ...flexStyle('center', 'center'),
+                        'whiteSpace': 'pre-line'
+                    }}
+                >
+                    <Button
+                        onClick={() => { setOpenIsVip(false) }}
+                        autoFocus>
+                        Đóng
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Drawer >
     )
 }

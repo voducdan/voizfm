@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 
 // import redux
 import { useDispatch } from 'react-redux';
-import { handleOpenLogin } from '../../redux/openLogin';
 
 // import MUI component
 import {
@@ -12,10 +11,13 @@ import {
     Tab,
     Typography
 } from '@mui/material';
-import GraphicEqOutlinedIcon from '@mui/icons-material/GraphicEqOutlined';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
+
 // import others components
 import PlaylistThumnail from '../../components/Shared/PlaylistThumbnail';
+import {
+    GraphicEQ,
+    AccessTime
+} from '../../components/Icons/index';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
@@ -61,7 +63,7 @@ const PlaylistAudioCount = (props) => {
                 columnGap: '6px'
             }}
         >
-            <GraphicEqOutlinedIcon sx={{ color: COLORS.contentIcon, width: isSm ? '12px' : '16px', height: isSm ? '12px' : '16px' }} />
+            <GraphicEQ />
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
@@ -83,7 +85,7 @@ const AudioDuration = (props) => {
                 columnGap: '6px'
             }}
         >
-            <AccessTimeIcon sx={{ color: COLORS.contentIcon, width: isSm ? '12px' : '16px', height: isSm ? '12px' : '16px' }} />
+            <AccessTime />
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
@@ -100,7 +102,11 @@ const tabStyle = () => ({
     '&.MuiTab-root': {
         ...TEXT_STYLE.title1,
         color: COLORS.contentIcon,
-        textTransform: 'none'
+        textTransform: 'none',
+        alignItems: 'flex-start',
+        p: 0,
+        minWidth: 0,
+        mr: '16px'
     },
     '&.Mui-selected': {
         color: COLORS.white
@@ -123,7 +129,6 @@ export default function PlaylistHistory() {
     const [playlistHistories, setPlaylistHistories] = useState([]);
     const [audiotHistories, setAudioHistories] = useState([]);
     const [value, setValue] = useState(0);
-    const dispatch = useDispatch();
 
     useEffect(() => {
         async function fetchPlaylistHistories() {
@@ -156,7 +161,11 @@ export default function PlaylistHistory() {
     };
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box
+            sx={{
+                width: '100%'
+            }}
+        >
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h2),
@@ -189,6 +198,7 @@ export default function PlaylistHistory() {
                             name={i.name}
                             src={i?.avatar?.thumb_url}
                             authors={i?.authors}
+                            promotion={i?.promotion}
                             children={<PlaylistAudioCount
                                 isSm={isSm}
                                 promotion={i?.promotion}
@@ -208,6 +218,8 @@ export default function PlaylistHistory() {
                             authors={i?.author?.name}
                             hasBookmark={false}
                             promotion={i?.promotion}
+                            isAudio={true}
+                            playlistId={i?.playlist?.id}
                             children={<AudioDuration isSm={isSm}
                                 duration={i?.duration} />}
                         />

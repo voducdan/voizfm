@@ -1,6 +1,10 @@
 // import next router
 import { useRouter } from 'next/router';
 
+import { useSelector, useDispatch} from 'react-redux';
+import { selectUser } from '../../redux/user';
+import { setOpenLogin } from '../../redux/openLogin';
+
 // import MUI package
 import {
     Box,
@@ -17,6 +21,8 @@ import { COLORS, TEXT_STYLE } from '../../utils/constants';
 
 export default function PlayAudioDialog(props) {
     const router = useRouter();
+    const user = useSelector(selectUser);
+    const dispatch = useDispatch();
     const {
         isSm,
         openUnauthorizedModal,
@@ -26,6 +32,14 @@ export default function PlayAudioDialog(props) {
         setOpenUpdateRequiredModal,
         handleBuyPlaylist
     } = props;
+
+    const handleUpVipOnPlauAudio = ()=>{
+        if(!user){
+            dispatch(setOpenLogin(true));
+            return;
+        }
+        router.push('/up-vip')
+    }
 
     return (
         <Box>
@@ -209,7 +223,7 @@ export default function PlayAudioDialog(props) {
                                 Mua lẻ sách
                             </Button>
                             <Button
-                                onClick={() => { router.push('/up-vip') }}
+                                onClick={handleUpVipOnPlauAudio}
                                 sx={{
                                     ...TEXT_STYLE.title1,
                                     color: COLORS.white,

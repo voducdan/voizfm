@@ -79,9 +79,9 @@ export default function Footer({ isSm }) {
 
                     color: COLORS.white
                 }}>
-                    Công Ty Cổ phần Công nghệ WeWe
+                    CÔNG TY TNHH CÔNG NGHỆ WEWE
                 </Typography>
-                {infoBox(Phone, '0946 110 993')}
+                {infoBox(Phone, '0345 510 055')}
                 {infoBox(Email, 'support@wewe.vn')}
                 {infoBox(Location, '44 Lê Văn Duyệt, P1, Q. Bình Thạnh, TP. HCM')}
             </Box>

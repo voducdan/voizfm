@@ -10,7 +10,7 @@ import DiscoveryContent from './DiscoveryContent';
 export default function Discovery() {
     return (
         <Box>
-            <DiscoverySlider />
+            {/* <DiscoverySlider /> */}
             <DiscoveryContent />
         </Box>
     )

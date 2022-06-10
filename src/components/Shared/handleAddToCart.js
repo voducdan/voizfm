@@ -48,7 +48,6 @@ const handleAddToCart = async (
                 return;
             }
             const tmpCart = [...cart, playlist];
-            console.log(tmpCart)
             dispatch(setCart(tmpCart));
             dispatch(setAddToCartFlag(1));
             if (moveToCart) {

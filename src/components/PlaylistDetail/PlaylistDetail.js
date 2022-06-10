@@ -30,6 +30,9 @@ import { Swiper, SwiperSlide } from '../../../node_modules/swiper/react/swiper-r
 
 import ShowMoreText from "react-show-more-text";
 
+// import date-fns
+import { format } from 'date-fns';
+
 // import MUI components
 import {
     Box,
@@ -53,8 +56,7 @@ import {
     DialogContentText,
     DialogActions,
     Snackbar,
-    Alert,
-    useForkRef
+    Alert
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -65,7 +67,7 @@ import AddIcon from '@mui/icons-material/Add';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 // import icons
-import { Share, Play } from '../../components/Icons/index';
+import { Share, Play, StarEmpty, StarFill } from '../../components/Icons/index';
 
 
 // import other components
@@ -74,6 +76,7 @@ import { RateModal, AfterRateModal } from './RateModal';
 import ShareModal from '../../components/Shared/ShareModal';
 import InfoLabel from '../../components/Shared/InfoLabel';
 import InfoValue from '../../components/Shared/InfoValue';
+import RequireDownloadAppModal from '../../components/Shared/RequireDownloadAppModal';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle';
@@ -85,6 +88,7 @@ import formatDuration from '../../utils/formatDuration';
 
 // import service
 import API from '../../services/api';
+import { setAudioListenings, getAudioListenings } from '../../services/audioListenning';
 
 const ShowTextBtn = (content) => (
     <Button
@@ -133,12 +137,19 @@ export default function PlatlistDetail({ playlistFromAPI }) {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [openUpdateRequiredModal, setOpenUpdateRequiredModal] = useState(false);
     const [openUnauthorizedModal, setOpenUnauthorizedModal] = useState(false);
+    const [openDonwloadAppModal, setOpenDonwloadAppModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [afterRateContent, setAfterRateContent] = useState('Cảm ơn đánh giá của bạn. Bạn có thể thay đổi điểm đánh giá  bất cứ lúc nào.');
     const [addToCartErrorMessage, setAddToCartErrorMessage] = useState('');
+    const [sortAsc, setSortAsc] = useState(false);
+    const [audioId, setudioId] = useState(null);
+    const [hoverRating, setHoverRating] = useState(false);
+    const [hasLoadMoreAudio, setHasLoadMoreAudio] = useState(true);
+    const [audioPage, setAudioPage] = useState(1);
 
     const isSm = windowSize.width > SCREEN_BREAKPOINTS.sm ? false : true;
     const coverImgHeight = isSm ? 182 : 300;
+    const audioListenings = getAudioListenings();
 
     const dispatch = useDispatch();
 
@@ -156,27 +167,15 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             setRecommendedPlaylist(data.slice(0, 6));
         }
 
-        async function fetchPlaylistAudios() {
-            function compare(a, b) {
-                if (a.position < b.position) {
-                    return -1;
-                }
-                if (a.position > b.position) {
-                    return 1;
-                }
-                return 0;
-            }
-            const res = await api.getPlaylistAudios(id);
-            const data = res.data.data;
-            data.sort(compare);
-            setPlaylistAudios(data);
+        function fetchPlaylistAudios(id) {
+            fetchAudios(id, 1);
         }
         if (id) {
             dispatch(setFooter(false));
             setUrl(window.location.href);
             fetchPlaylist();
             fetchRecommendedPlaylist();
-            fetchPlaylistAudios();
+            fetchPlaylistAudios(id);
             setPlaylistInfo(createPlaylistInfo());
         }
     }, [id]);
@@ -184,6 +183,8 @@ export default function PlatlistDetail({ playlistFromAPI }) {
     useEffect(() => {
         const { id, audioId } = router.query;
         if (audioId) {
+            setudioId(audioId);
+            dispatch(setFooter(false));
             fetchAudioUrl(
                 dispatch,
                 audioId,
@@ -229,16 +230,54 @@ export default function PlatlistDetail({ playlistFromAPI }) {
         }
     }, [audioHls, audioData]);
 
+    useEffect(() => {
+        if (id) {
+            fetchAudios(id, audioPage)
+        }
+    }, [audioPage]);
 
+
+    const fetchAudios = async (id, page) => {
+        function compare(a, b) {
+            if (a.position < b.position) {
+                return -1;
+            }
+            if (a.position > b.position) {
+                return 1;
+            }
+            return 0;
+        }
+        const res = await api.getPlaylistAudios(id, page);
+        const data = res.data.data;
+        const order = playlistFromAPI?.order || 'asc';
+        data.sort(compare);
+        if (order === 'desc') {
+            data.reverse();
+        }
+        setPlaylistAudios([...playlistAudios, ...data]);
+        if (data.length < 10) {
+            setHasLoadMoreAudio(false);
+        }
+    }
+
+    const handleLoadMoreAudio = () => {
+        const newAudioPage = audioPage + 1;
+        setAudioPage(newAudioPage);
+    }
 
     const handleSortAudioList = () => {
         let copiedPlaylistAudios = [...playlistAudios];
         copiedPlaylistAudios = copiedPlaylistAudios.reverse();
         setPlaylistAudios([...copiedPlaylistAudios]);
+        setSortAsc(!sortAsc);
     }
 
     const handleBookmark = () => {
         async function bookmarkPlaylist() {
+            if (!user) {
+                dispatch(setOpenLogin(true));
+                return;
+            }
             try {
                 const res = await api.bookmarkPlaylist(playlist.id);
                 const data = await res.data;
@@ -344,17 +383,30 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                         </Box>
                 }
             ]
-            if (playlist?.promotion !== 'free') {
+            if (playlist?.promotion === 'coin' || (playlist?.promotion === 'vip' && playlist?.category?.code !== 'podcast')) {
                 const sellPrice = {
                     label: <InfoLabel title='Giá bán lẻ' />,
                     value:
-                        <Box sx={{ ...flexStyle('flex-start', 'center'), columnGap: '6px' }}>
+                        <Box>
                             {
                                 playlist?.sale_coin_price < playlist?.coin_price && (
-                                    <Typography sx={{ ...TEXT_STYLE.content2, color: COLORS.VZ_Text_content, textDecoration: 'line-through' }}>{FormatPrice(playlist?.sale_coin_price * 100)}đ</Typography>
+                                    <Box sx={{ ...flexStyle('flex-start', 'center'), columnGap: '6px' }}>
+                                        {
+                                            playlist?.sale_coin_price < playlist?.coin_price && (
+                                                <Typography sx={{ ...TEXT_STYLE.content2, color: COLORS.VZ_Text_content, textDecoration: 'line-through' }}>{FormatPrice(playlist?.coin_price * 100)}đ</Typography>
+                                            )
+                                        }
+                                        <Typography sx={{ ...TEXT_STYLE.content2, color: COLORS.white }}>{FormatPrice(playlist?.sale_coin_price * 100)}đ</Typography>
+                                    </Box>
                                 )
                             }
-                            <Typography sx={{ ...TEXT_STYLE.content2, color: COLORS.white }}>{FormatPrice(playlist?.coin_price * 100)}đ</Typography>
+                            {
+                                playlist?.sale_coin_price === playlist?.coin_price && (
+                                    <Box sx={{ ...flexStyle('flex-start', 'center'), columnGap: '6px' }}>
+                                        <Typography sx={{ ...TEXT_STYLE.content2, color: COLORS.white }}>{FormatPrice(playlist?.coin_price * 100)}đ</Typography>
+                                    </Box>
+                                )
+                            }
                         </Box>
 
                 };
@@ -423,7 +475,20 @@ export default function PlatlistDetail({ playlistFromAPI }) {
         }
     }
 
-    const handlePlayOneAudio = async (audioId) => {
+    const handlePlayOneAudio = async (audioId, idx) => {
+        if (user) {
+            await api.trackingAudio(audioListenings);
+            await api.addListeningPlaylists(audioId, 0, playlist.id);
+
+            const audioListenning = {
+                "audio_id": audioId,
+                "duration_listening": 0,
+                "listen_at": format(new Date(), 'yyyy-MM-dd hh:mm:ss'),
+                "listen_from": "website"
+            }
+            setAudioListenings([audioListenning]);
+            localStorage.setItem('currAudioId', audioId);
+        }
         handlePlayAudio(
             dispatch,
             user,
@@ -433,6 +498,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             setErrorMessage,
             setOpenUpdateRequiredModal,
             setOpenUnauthorizedModal,
+            setOpenDonwloadAppModal,
             setOpenSnackbar
         );
     }
@@ -449,7 +515,17 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             }
             if (playlistAudios.length > 0) {
                 if (user) {
+                    await api.trackingAudio(audioListenings);
                     await api.addListeningPlaylists(playlistAudios[0].id, 0, playlist.id);
+
+                    const audioListenning = {
+                        "audio_id": playlistAudios[0].id,
+                        "duration_listening": 0,
+                        "listen_at": format(new Date(), 'yyyy-MM-dd hh:mm:ss'),
+                        "listen_from": "website"
+                    }
+                    setAudioListenings([audioListenning]);
+                    localStorage.setItem('currAudioId', playlistAudios[0].id);
                 }
                 fetchAudioUrl(
                     dispatch,
@@ -465,7 +541,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             setOpenSnackbar(true);
         }
         catch (err) {
-            const errList = err.response.data.error;
+            const errList = err?.response?.data?.error || err.message;
             let errMessage = '';
             if (errList instanceof Object) {
                 for (let e in errList) {
@@ -494,6 +570,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
             dispatch(setOpenLogin(true));
             return;
         }
+        router.push('/up-vip');
     }
 
     const formatRating = (rate) => {
@@ -517,7 +594,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
         );
     }
 
-    return (
+    return audioId ? '' : (
         <Box
             sx={{
                 ...flexStyle('center', 'center'),
@@ -531,13 +608,17 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                     position: 'absolute',
                     height: `${coverImgHeight}px`,
                     width: '100%',
-                    top: 0
+                    top: 0,
+                    opacity: 0.5,
+                    background: COLORS.bg1,
+                    filter: 'blur(5px)',
                 }}
             >
                 <img style={{
                     width: '100%',
                     height: '100%',
                     left: 0,
+                    objectFit: 'cover'
                 }} alt="cover img alt" src={playlist?.avatar?.original_url}></img>
             </Box>
             <Box
@@ -630,14 +711,16 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                                 <Rating
                                                     sx={{
                                                         mr: '10px',
-                                                        '& .MuiRating-iconEmpty': {
-                                                            color: COLORS.contentIcon
-                                                        },
                                                         '& .MuiRating-icon': {
-                                                            ml: isSm ? '22px' : '24px'
+                                                            ml: isSm ? '22px' : '24px',
+                                                            transform: 'scale(1)'
                                                         }
                                                     }}
+                                                    emptyIcon={<StarEmpty fill={COLORS.contentIcon} />}
+                                                    icon={<StarFill fill={(contentRating > 0 || hoverRating) ? '#F68C2D' : COLORS.contentIcon} />}
                                                     onChange={(_, newValue) => { handleOpenRateModal(newValue) }}
+                                                    onMouseOver={() => { setHoverRating(true) }}
+                                                    onMouseOut={() => { setHoverRating(false) }}
                                                     name='desktop-content-rating'
                                                     value={contentRating}
                                                     precision={1}
@@ -693,6 +776,9 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                             pr: '14px',
                                             ':hover': {
                                                 bgcolor: playlist?.is_bookmark ? COLORS.bg3 : COLORS.main
+                                            },
+                                            '& .MuiButton-startIcon': {
+                                                mr: 0
                                             }
                                         }}
                                         startIcon={playlist?.is_bookmark ? <CheckIcon /> : <AddIcon />}
@@ -734,14 +820,16 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                             <Rating
                                                 sx={{
                                                     mr: '10px',
-                                                    '& .MuiRating-iconEmpty': {
-                                                        color: COLORS.contentIcon
-                                                    },
                                                     '& .MuiRating-icon': {
-                                                        ml: isSm ? '22px' : '24px'
+                                                        ml: isSm ? '22px' : '24px',
+                                                        transform: 'scale(1)'
                                                     }
                                                 }}
+                                                emptyIcon={<StarEmpty fill={COLORS.contentIcon} />}
+                                                icon={<StarFill fill={(contentRating > 0 || hoverRating) ? '#F68C2D' : COLORS.contentIcon} />}
                                                 onChange={(_, newValue) => { handleOpenRateModal(newValue) }}
+                                                onMouseOver={() => { setHoverRating(true) }}
+                                                onMouseOut={() => { setHoverRating(false) }}
                                                 name='mb-content-rating'
                                                 value={contentRating}
                                                 precision={1}
@@ -824,9 +912,9 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                         padding: isSm ? '26px 0 0 15px' : '26px 32px',
                         borderRadius: '10px',
                         height: isSm ? 'auto' : '100%',
-                        scrollbarGutter: 'stable',
                         overflow: isSm ? 'auto' : 'hidden',
                         boxSizing: 'border-box',
+                        scrollbarGutter: 'stable',
                         '::-webkit-scrollbar': {
                             width: '4px'
                         },
@@ -864,28 +952,59 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                             sx={{
                                 width: '100%',
                                 bgcolor: 'transparent',
-                                boxShadow: 'none'
+                                boxShadow: 'none',
+                                overflowX: 'hidden',
+                                scrollbarGutter: 'stable',
+                                '::-webkit-scrollbar': {
+                                    width: '4px',
+                                    height: '4px'
+                                },
+
+                                '::-webkit-scrollbar-track': {
+                                    borderRadius: '5px',
+                                },
+
+                                '::-webkit-scrollbar-thumb': {
+                                    background: COLORS.bg3,
+                                    borderRadius: '5px'
+                                },
+
+                                ':hover': {
+                                    overflowX: 'auto'
+                                }
                             }}
                             component={Paper}>
                             <Table
-                                aria-label="playlist info tbl">
+                                aria-label="playlist info tbl"
+                                sx={{
+                                    width: 'auto'
+                                }}
+                            >
                                 <TableBody>
                                     {playlistInfo.map((row, idx) => (
                                         <TableRow
                                             key={idx}
-                                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                                            sx={{
+                                                '&:last-child td, &:last-child th': {
+                                                    border: 0
+                                                },
+                                                width: '100%'
+                                            }}
                                         >
                                             <TableCell
                                                 sx={{
                                                     borderBottom: 'none',
                                                     padding: '0 10px 16px 0',
                                                     whiteSpace: 'nowrap',
+                                                    width: '30%',
+                                                    maxWidth: '70px',
                                                     ...(isSm && {
                                                         width: '10px'
                                                     })
 
                                                 }}
-                                                component="th" scope="row"
+                                            // component="th"
+                                            // scope="row"
                                             >
                                                 {row.label}
                                             </TableCell>
@@ -956,8 +1075,8 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                     {
                                         recommendedPlaylist.map((item, idx) => (
                                             <Link
-                                                href={'/playlists/[id]'}
-                                                as={`/playlists/${item?.id}`}
+                                                href={'/play/[id]'}
+                                                as={`/play/${item?.id}`}
                                                 key={idx}
                                             >
                                                 <Box
@@ -994,8 +1113,8 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                     {recommendedPlaylist.map((item, idx) => (
                                         <SwiperSlide key={idx} style={{ width: 'auto' }}>
                                             <Link
-                                                href={'/playlists/[id]'}
-                                                as={`/playlists/${item?.id}`}
+                                                href={'/play/[id]'}
+                                                as={`/play/${item?.id}`}
                                                 key={idx}
                                             >
                                                 <Box>
@@ -1105,7 +1224,10 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                 onClick={handleSortAudioList}
                                 sx={{
                                     color: COLORS.contentIcon,
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    ...(sortAsc && {
+                                        transform: 'rotateX(180deg)'
+                                    })
                                 }}
                             />
                         </Box>
@@ -1134,14 +1256,15 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                         >
                             <List
                                 sx={{
-                                    width: '100%'
+                                    width: '100%',
+                                    textAlign: 'center'
                                 }}
                             >
                                 {playlistAudios.map((value, idx) => {
                                     return (
                                         <ListItem
                                             key={value.id}
-                                            onClick={() => { handlePlayOneAudio(value?.id) }}
+                                            onClick={() => { handlePlayOneAudio(value?.id, idx) }}
                                             sx={{
                                                 paddingLeft: 0,
                                                 paddingRight: 0,
@@ -1183,6 +1306,28 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                                         </ListItem>
                                     );
                                 })}
+                                {
+                                    hasLoadMoreAudio && (
+                                        <Button
+                                            onClick={handleLoadMoreAudio}
+                                            sx={{
+                                                textTransform: 'none',
+                                                ...TEXT_STYLE.title2,
+                                                color: COLORS.white,
+                                                bgcolor: COLORS.main,
+                                                width: '170px',
+                                                height: '40px',
+                                                borderRadius: '4px',
+                                                mt: '10px',
+                                                ':hover': {
+                                                    bgcolor: COLORS.main
+                                                }
+                                            }}
+                                        >
+                                            Tải thêm
+                                        </Button>
+                                    )
+                                }
                             </List>
                         </Box>
                     </Box>
@@ -1199,7 +1344,7 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                 }}
             >
                 {
-                    (playlist?.promotion === 'vip' && !playlist?.is_purchased) && (
+                    ((['vip', 'coin'].includes(playlist?.promotion) && !playlist?.is_purchased) && playlist?.category?.code !== 'podcast') && (
                         <Tooltip open={addToCartError} title={<div style={{ whiteSpace: 'pre-line', color: COLORS.error }}>{addToCartErrorMessage}</div>}>
                             <Button
                                 onClick={() => {
@@ -1247,25 +1392,29 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                         >Đã mua</Button>
                     )
                 }
-                <Box
-                    onClick={handleUpVip}
-                    sx={{
-                        width: isSm ? '50%' : '20%',
-                    }}
-                >
-                    <Button
-                        sx={{
-                            bgcolor: COLORS.main,
-                            borderRadius: '6px',
-                            width: '100%',
-                            ...TEXT_STYLE.title1,
-                            color: COLORS.white,
-                            textTransform: 'none',
-                            height: '48px',
-                            p: '14px 20px'
-                        }}
-                    >Mua gói VIP</Button>
-                </Box>
+                {
+                    ['free', 'coin'].includes(user?.promotion) && (
+                        <Box
+                            sx={{
+                                width: isSm ? '50%' : '20%',
+                            }}
+                        >
+                            <Button
+                                onClick={handleUpVip}
+                                sx={{
+                                    bgcolor: COLORS.main,
+                                    borderRadius: '6px',
+                                    width: '100%',
+                                    ...TEXT_STYLE.title1,
+                                    color: COLORS.white,
+                                    textTransform: 'none',
+                                    height: '48px',
+                                    p: '14px 20px'
+                                }}
+                            >Mua gói VIP</Button>
+                        </Box>
+                    )
+                }
             </Box>
             <Dialog
                 open={openUnauthorizedModal}
@@ -1476,6 +1625,12 @@ export default function PlatlistDetail({ playlistFromAPI }) {
                     </Box>
                 </DialogActions>
             </Dialog>
+            <RequireDownloadAppModal
+                isSm={isSm}
+                router={router}
+                openDonwloadAppModal={openDonwloadAppModal}
+                setOpenDonwloadAppModal={setOpenDonwloadAppModal}
+            />
         </Box >
     )
 }

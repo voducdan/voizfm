@@ -13,7 +13,9 @@ import { useRouter } from 'next/router';
 // import MUI component
 import {
     Box,
-    Typography
+    Typography,
+    Divider,
+    Button
 } from '@mui/material';
 import GraphicEqOutlinedIcon from '@mui/icons-material/GraphicEqOutlined';
 // import others components
@@ -56,24 +58,40 @@ export default function Voicer() {
     const voicer = useSelector(selectVoicer);
     const windowSize = useWindowSize();
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
+    const [page, setPage] = useState(1);
+    const [hasLoadMore, setHasLoadMore] = useState(false);
 
     const [voicerPlaylists, setvoicerPlaylists] = useState([]);
 
     useEffect(() => {
-        async function fetchVoicerPlaylists() {
-            try {
-                const res = await api.getVoicerPlaylists(id);
-                const data = await res.data.data;
-                setvoicerPlaylists(data);
-            }
-            catch (err) {
-                console.log(err);
-            }
-        }
         if (id) {
-            fetchVoicerPlaylists();
+            fetchVoicerPlaylists(id, page);
         }
-    }, [id])
+    }, [id]);
+
+    async function fetchVoicerPlaylists(id, page) {
+        try {
+            const res = await api.getVoicerPlaylists(id, page);
+            const data = await res.data.data;
+            if (data.length < 10) {
+                setHasLoadMore(false);
+            }
+            else {
+                setHasLoadMore(true);
+            }
+            const allPlaylists = [...voicerPlaylists, ...data];
+            setvoicerPlaylists(allPlaylists);
+        }
+        catch (err) {
+            console.log(err);
+        }
+    }
+
+    const handleLoadMorePlaylist = () => {
+        const nextPage = page + 1;
+        fetchVoicerPlaylists(id, nextPage);
+        setPage(nextPage);
+    }
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -156,6 +174,40 @@ export default function Voicer() {
                     ))
                 }
             </Box>
+            {
+                hasLoadMore && (
+                    <Box
+                        sx={{
+                            mt: '26px',
+                            mb: '80px',
+                            textAlign: 'center',
+                            width: '100%'
+                        }}
+                    >
+                        <Button
+                            variant="outlined"
+                            sx={{
+                                textTransform: 'none',
+                                color: COLORS.white,
+                                ...TEXT_STYLE.title1,
+                                borderRadius: '8px',
+                                height: '48px',
+                                width: '142px',
+                                border: `1px solid ${COLORS.blackStroker}`
+                            }}
+                            onClick={handleLoadMorePlaylist}
+                        >
+                            Xem thêm
+                        </Button>
+                    </Box>
+                )
+            }
+            <Divider
+                sx={{
+                    background: COLORS.blackStroker,
+                    m: '80px 50px 0 50px'
+                }}
+            />
         </Box>
     )
 }

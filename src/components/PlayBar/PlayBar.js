@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 
 // import reducer, actions
 import { setOpenAudioDetail, selectOpenExpandMoreAudio, setOpenExpandMoreAudio } from '../../redux/playAudio';
+import { selectCart } from '../../redux/payment';
 import { selectAudioData } from '../../redux/audio';
 
 // import next router
@@ -22,7 +23,10 @@ import {
     Divider,
     Snackbar,
     Alert,
-    IconButton
+    Dialog,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from '@mui/material';
 import VolumeUp from '@mui/icons-material/VolumeUp';
 import VolumeOffIcon from '@mui/icons-material/VolumeOff';
@@ -34,6 +38,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 // import others components
 import Control from './Control';
 import AudioList from '../../components/AudioPlay/AudioListModals';
+import handleAddToCart from '../../components/Shared/handleAddToCart';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle';
@@ -52,6 +57,7 @@ export default function PlayBar() {
     const router = useRouter()
     const openExpandMoreAudio = useSelector(selectOpenExpandMoreAudio);
     const audioData = useSelector(selectAudioData);
+    const cart = useSelector(selectCart);
     const [volume, setVolume] = useState(60);
     const [anchorAudioList, setAnchorAudioList] = useState(null);
     const [isLiked, setIsLiked] = useState(audioData?.meta_data?.is_liked);
@@ -59,6 +65,9 @@ export default function PlayBar() {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [nextAudioId, setNextAudioId] = useState(undefined);
     const [prevAudioId, setPrevAudioId] = useState(undefined);
+    const [openUpdateRequiredModal, setOpenUpdateRequiredModal] = useState(false);
+    const [openUnauthorizedModal, setOpenUnauthorizedModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const dispatch = useDispatch();
 
@@ -76,7 +85,11 @@ export default function PlayBar() {
         async function fetchPlaylistAudios() {
             const res = await api.getPlaylistAudios(audioData?.playlist?.id);
             const data = res.data.data;
+            const order = audioData?.playlist?.order || 'asc';
             data.sort(compare);
+            if (order === 'desc') {
+                data.reverse();
+            }
             setAudiosList(data);
         };
         audio.current.volume = volume / 100;
@@ -148,8 +161,21 @@ export default function PlayBar() {
         dispatch(setOpenExpandMoreAudio(false));
     }
 
+    const handleBuyPlaylist = () => {
+        handleAddToCart(
+            dispatch,
+            router,
+            cart,
+            audioData?.playlist,
+            true,
+            setErrorMessage,
+            setOpenSnackbar
+        );
+    }
+
     return (
         <Box
+            onClick={handleExpandAudioDetail}
             id='play-audio-bar'
             sx={{
                 bgcolor: COLORS.bg1,
@@ -163,6 +189,7 @@ export default function PlayBar() {
                 bottom: 0,
                 borderTop: `1px solid ${COLORS.blackStroker}`,
                 height: isSm ? 'auto' : '100px',
+                cursor: 'pointer',
                 ...(isSm && { flexDirection: 'column-reverse', rowGap: '16px' })
             }}
         >
@@ -287,7 +314,6 @@ export default function PlayBar() {
                 }}
             >
                 <Control
-                    audioData={audioData}
                     audio={audio}
                     nextAudioId={nextAudioId}
                     prevAudioId={prevAudioId}
@@ -365,11 +391,226 @@ export default function PlayBar() {
             </Snackbar>
             <AudioList
                 anchorAudioList={anchorAudioList}
+                dispatch={dispatch}
                 onCloseAudioList={onCloseAudioList}
                 playlistId={audioData?.playlist?.id}
+                promotion={audioData?.playlist?.promotion}
                 audioId={Number(audioData.id)}
                 audiosList={audiosList}
+                setErrorMessage={setErrorMessage}
+                setOpenUpdateRequiredModal={setOpenUpdateRequiredModal}
+                setOpenUnauthorizedModal={setOpenUnauthorizedModal}
+                setOpenSnackbar={setOpenSnackbar}
             />
+            <Dialog
+                open={openUnauthorizedModal}
+                onClose={() => { setOpenUnauthorizedModal(false) }}
+                sx={{
+                    '& .MuiPaper-root': {
+                        width: isSm ? '95%' : '512px',
+                        bgcolor: COLORS.bg1,
+                        m: 0,
+                        p: '40px 56px',
+                        boxSizing: 'border-box',
+                        borderRadius: isSm ? '10px' : '30px',
+                        ...(isSm && { m: '0 16px' })
+                    }
+                }}
+            >
+                <DialogContent
+                    sx={{
+                        p: 0
+                    }}
+                >
+                    <DialogContentText
+                        sx={{
+                            ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h1),
+                            color: COLORS.white,
+                            textAlign: 'center',
+                            mb: isSm ? '24px' : '32px',
+                            p: 0
+                        }}
+                    >
+                        Voiz FM
+                    </DialogContentText>
+                    <DialogContentText
+                        sx={{
+                            ...TEXT_STYLE.content1,
+                            color: COLORS.contentIcon,
+                            textAlign: 'center',
+                            whiteSpace: 'pre-line',
+                            mb: '32px'
+                        }}
+                    >
+                        {errorMessage}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions
+                    sx={{
+                        ...flexStyle('center', 'center')
+                    }}
+                >
+                    <Box
+                        sx={{
+                            ...flexStyle('center', 'center'),
+                            flexDirection: 'column',
+                            rowGap: '24px'
+                        }}
+                    >
+                        <Button
+                            onClick={handleBuyPlaylist}
+                            sx={{
+                                ...TEXT_STYLE.title1,
+                                color: COLORS.white,
+                                textTransform: 'none',
+                                borderRadius: '8px',
+                                width: isSm ? '168px' : '192px',
+                                height: '48px',
+                                bgcolor: COLORS.main
+                            }}
+                            autoFocus
+                        >
+                            Mua lẻ sách
+                        </Button>
+                        <Button
+                            onClick={() => { setOpenUnauthorizedModal(false) }}
+                            sx={{
+                                ...TEXT_STYLE.content1,
+                                color: COLORS.contentIcon,
+                                textTransform: 'none'
+                            }}
+                        >
+                            Bỏ qua
+                        </Button>
+                    </Box>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={openUpdateRequiredModal}
+                onClose={() => { setOpenUpdateRequiredModal(false) }}
+                sx={{
+                    '& .MuiPaper-root': {
+                        width: isSm ? '95%' : '512px',
+                        bgcolor: COLORS.bg1,
+                        m: 0,
+                        p: '40px 56px',
+                        boxSizing: 'border-box',
+                        borderRadius: isSm ? '10px' : '30px',
+                        ...(isSm && { m: '0 16px' })
+                    }
+                }}
+            >
+                <Box
+                    sx={{
+                        width: '100%',
+                        ...flexStyle('center', 'center'),
+                        mb: isSm ? '24px' : '32px'
+                    }}
+                >
+                    <img
+                        style={{
+                            width: isSm ? '134px' : '108px',
+                            height: isSm ? '134px' : '108px'
+                        }}
+                        src='/images/upgrade.png'
+                        alt='upgrade img'
+                    />
+                </Box>
+                <DialogContent
+                    sx={{
+                        p: 0
+                    }}
+                >
+                    <DialogContentText
+                        sx={{
+                            ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h1),
+                            color: COLORS.white,
+                            textAlign: 'center',
+                            mb: '24px',
+                            p: 0
+                        }}
+                    >
+                        Nâng cấp ngay
+                    </DialogContentText>
+                    <DialogContentText
+                        sx={{
+                            ...TEXT_STYLE.content1,
+                            color: COLORS.contentIcon,
+                            textAlign: 'center',
+                            whiteSpace: 'pre-line',
+                            mb: '32px'
+                        }}
+                    >
+                        {errorMessage}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions
+                    sx={{
+                        ...flexStyle('center', 'center')
+                    }}
+                >
+                    <Box
+                        sx={{
+                            ...flexStyle('center', 'center'),
+                            flexDirection: 'column',
+                            rowGap: '24px',
+                            width: '100%'
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: '100%',
+                                ...flexStyle('center', 'center'),
+                                columnGap: '16px'
+                            }}
+                        >
+                            <Button
+                                onClick={handleBuyPlaylist}
+                                sx={{
+                                    ...TEXT_STYLE.title1,
+                                    color: COLORS.white,
+                                    textTransform: 'none',
+                                    borderRadius: '8px',
+                                    width: isSm ? '168px' : '192px',
+                                    height: '48px',
+                                    bgcolor: COLORS.bg1,
+                                    border: `1px solid ${COLORS.blackStroker}`,
+                                    width: '50%'
+                                }}
+                                autoFocus
+                            >
+                                Mua lẻ sách
+                            </Button>
+                            <Button
+                                onClick={() => { router.push('/up-vip') }}
+                                sx={{
+                                    ...TEXT_STYLE.title1,
+                                    color: COLORS.white,
+                                    textTransform: 'none',
+                                    borderRadius: '8px',
+                                    width: isSm ? '168px' : '192px',
+                                    height: '48px',
+                                    bgcolor: COLORS.main,
+                                    width: '50%'
+                                }}
+                                autoFocus
+                            >
+                                Đăng ký gói
+                            </Button>
+                        </Box>
+                        <Button
+                            onClick={() => { setOpenUpdateRequiredModal(false) }}
+                            sx={{
+                                ...TEXT_STYLE.content1,
+                                color: COLORS.contentIcon,
+                                textTransform: 'none'
+                            }}
+                        >
+                            Bỏ qua
+                        </Button>
+                    </Box>
+                </DialogActions>
+            </Dialog>
         </Box>
     )
 }

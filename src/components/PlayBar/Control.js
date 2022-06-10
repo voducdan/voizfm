@@ -1,18 +1,26 @@
 // import react
 import { useState, useEffect, useRef } from 'react';
 
-// import redux
-import { useDispatch, useSelector } from 'react-redux';
-import { togglePlayAudio, setAudioHls, selectAudioHls } from '../../redux/playAudio';
-import { setAudioData } from '../../redux/audio';
-import { selectToken } from '../../redux/token';
-import { setCart, setAddToCartFlag } from '../../redux/payment';
 // import next router
 import { useRouter } from 'next/router';
+
+// import redux
+import { useDispatch, useSelector } from 'react-redux';
+import { selectUser } from '../../redux/user';
+import { togglePlayAudio, setAudioHls, selectAudioHls } from '../../redux/playAudio';
+import { setAudioData, selectAudioData } from '../../redux/audio';
+import { selectToken } from '../../redux/token';
+import { setCart, setAddToCartFlag } from '../../redux/payment';
 
 // import hls
 import Hls from 'hls.js';
 
+// import date-fns
+import { format } from 'date-fns';
+
+// import firebase
+import { firebase } from "../../../firebase.config";
+import { update, ref, onValue } from 'firebase/database'
 // import MUI component
 import { styled, useTheme } from '@mui/material/styles';
 import {
@@ -43,8 +51,12 @@ import { flexStyle } from '../../utils/flexStyle';
 import formatDuration from '../../utils/formatDuration';
 import { Speed, Clock } from '../Icons';
 
+import RequireDownloadAppModal from '../../components/Shared/RequireDownloadAppModal';
+
 // import services
 import API from '../../services/api';
+import { setAudioListenings, getAudioListenings } from '../../services/audioListenning';
+import { getToken } from '../../services/authentication';
 
 const WallPaper = styled('div')({
     width: '100%',
@@ -89,15 +101,16 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
 
 export default function Control(props) {
     const api = new API();
+    const router = useRouter();
 
-    const { audioData, audio, nextAudioId, prevAudioId, isSm } = props;
+    const { audio, nextAudioId, prevAudioId, isSm } = props;
     const theme = useTheme();
     const playBtn = useRef(null);
-    const navigate = useRouter();
-    const { mode } = navigate.query;
     const dispatch = useDispatch();
+    const user = useSelector(selectUser);
     const audioUrl = useSelector(selectAudioHls);
     const token = useSelector(selectToken);
+    const audioData = useSelector(selectAudioData);
     const [position, setPosition] = useState(0);
     const [paused, setPaused] = useState(false);
     const [timer, setTimer] = useState(0);
@@ -111,8 +124,51 @@ export default function Control(props) {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [openUpdateRequiredModal, setOpenUpdateRequiredModal] = useState(false);
     const [openUnauthorizedModal, setOpenUnauthorizedModal] = useState(false);
-
+    const [openDonwloadAppModal, setOpenDonwloadAppModal] = useState(false);
     const media = audio.current;
+
+    useEffect(() => {
+        const userRef = ref(firebase, `/users/${user?.uuid}`);
+        onValue(userRef, (snapshot) => {
+            const changedVal = snapshot.val();
+            if (!changedVal) {
+                return;
+            }
+            const tokenPlaying = changedVal.token_playing;
+            if (!paused && !tokenPlaying.startsWith(user?.uuid)) {
+                setPaused(true);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        media.addEventListener('timeupdate', (e) => {
+            const currentTime = Math.floor(e.target.currentTime);
+            setPosition(currentTime);
+        });
+    }, [audioData]);
+
+    useEffect(() => {
+        const audioId = Number(localStorage.getItem('currAudioId'));
+        if (position === audioData.duration) {
+            fetchAudioUrl(nextAudioId);
+        }
+        updateAudioListening(audioId, 1);
+        if (checkUserUseVipSubcription()) {
+            const audioListenings = getAudioListenings();
+            const totalTime = audioListenings.reduce((a, b) => ({ duration_listening: (a.duration_listening + b.duration_listening) }), { duration_listening: 0 })['duration_listening'];
+            console.log(totalTime)
+            if (totalTime % 120 === 0) {
+                trackingAudio([{
+                    "audio_id": audioId,
+                    "duration_listening": 120,
+                    "listen_at": format(new Date(), 'yyyy-MM-dd hh:mm:ss'),
+                    "listen_from": "website"
+                }])
+            }
+        }
+
+    }, [position])
 
     useEffect(() => {
         if (!audioUrl) {
@@ -130,6 +186,7 @@ export default function Control(props) {
                         promise.then(_ => {
                             media.muted = false;
                         }).catch(error => {
+                            console.log(error)
                             dispatch(togglePlayAudio());
                             setPaused(true);
                         });
@@ -143,16 +200,6 @@ export default function Control(props) {
                 media.play();
             });
         }
-        media.addEventListener('timeupdate', (e) => {
-            const currentTime = Math.floor(e.target.currentTime);
-            setPosition(currentTime);
-            if (currentTime === audioData.duration) {
-                fetchAudioUrl(nextAudioId);
-                // setPaused(true);
-                // media.currentTime = 0;
-                // setPosition(0);
-            }
-        });
 
     }, [audioUrl]);
 
@@ -164,11 +211,10 @@ export default function Control(props) {
             media.pause();
         }
         else {
-            if (media.paused) {
-                media.play();
-            }
             media.muted = false;
+            media.play();
         }
+        dispatch(togglePlayAudio());
     }, [paused]);
 
     useEffect(() => {
@@ -183,6 +229,53 @@ export default function Control(props) {
         }, timer * 1000 * 60);
         countDownTimer();
     }, [timer]);
+
+    const trackingAudio = async (data) => {
+        try {
+            await api.trackingAudio(data);
+            removeAudioListenings();
+        }
+        catch (err) {
+            console.log(err)
+        }
+    }
+
+    const checkUserUseVipSubcription = () => {
+        const currentHour = new Date().getHours();
+        const currentMin = new Date().getMinutes();
+        if (user &&
+            user.promotion === 'free' &&
+            user.user_resource.remaining_seconds > 0 &&
+            !audioData.is_purchased &&
+            audioData.playlist.promotion === 'vip' &&
+            (currentHour < 12 || currentHour > 12 || (currentHour === 12 && currentMin > 30))) {
+            return true;
+        }
+        return false;
+    }
+
+    const updateAudioListening = (audioId, currentTime) => {
+        if (!getToken()) {
+            return;
+        }
+        const audioListenings = getAudioListenings();
+        let distinctAudioId = audioListenings.map(i => i.audio_id);
+        let audioIdx = distinctAudioId.indexOf(audioId);
+        if (audioIdx !== -1) {
+            const copiedAudioListennings = [...audioListenings];
+            copiedAudioListennings[audioIdx]['duration_listening'] = copiedAudioListennings[audioIdx]['duration_listening'] + currentTime;
+            setAudioListenings([...copiedAudioListennings]);
+        }
+        else {
+            const audioListenning = {
+                "audio_id": audioId,
+                "duration_listening": currentTime,
+                "listen_at": format(new Date(), 'yyyy-MM-dd hh:mm:ss'),
+                "listen_from": "website"
+            }
+            setAudioListenings([...audioListenings, audioListenning]);
+        }
+    }
 
     const handleAddToCart = async (moveToCart = false) => {
         // add to cart store
@@ -265,6 +358,11 @@ export default function Control(props) {
             console.log(err)
             const status = err?.response?.status;
             if (status === 400) {
+                const errMsg = err?.response?.data?.error;
+                if (errMsg && errMsg === 'Nghe tiếp sách này tại ứng dụng Voiz FM') {
+                    setOpenDonwloadAppModal(true);
+                    return;
+                }
                 setErrorMessage('Quý khách chưa đăng ký dịch vụ thành công. Vui lòng kiểm tra lại')
                 setOpenUpdateRequiredModal(true);
                 return;
@@ -297,6 +395,16 @@ export default function Control(props) {
     const onPlayClick = () => {
         setPaused(!paused);
         dispatch(togglePlayAudio());
+        if (paused && user) {
+            const updates = {};
+            const uniqueToken = user.uuid + new Date().getTime();
+            const userKey = '/users/' + user.uuid;
+            const postData = { token_playing: uniqueToken };
+            updates[userKey] = postData;
+            update(ref(firebase), updates)
+                .then(val => console.log(val))
+                .catch(err => console.log(err));
+        }
     }
 
     const handleTimerClick = () => {
@@ -355,9 +463,11 @@ export default function Control(props) {
 
     const handleChangeAudio = (type) => {
         if (type === 'next' && nextAudioId) {
+            localStorage.setItem('currAudioId', nextAudioId)
             fetchAudioUrl(nextAudioId);
         }
         if (type === 'prev' && prevAudioId) {
+            localStorage.setItem('currAudioId', prevAudioId)
             fetchAudioUrl(prevAudioId);
         }
     }
@@ -1009,6 +1119,12 @@ export default function Control(props) {
                     </Box>
                 </DialogActions>
             </Dialog>
+            <RequireDownloadAppModal
+                isSm={isSm}
+                router={router}
+                openDonwloadAppModal={openDonwloadAppModal}
+                setOpenDonwloadAppModal={setOpenDonwloadAppModal}
+            />
         </Box>
     )
 }

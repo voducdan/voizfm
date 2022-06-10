@@ -69,7 +69,8 @@ const RandomPlayList = (props) => {
                 bgcolor: COLORS.bg2,
                 height: height,
                 borderRadius: '4px',
-                columnGap: isSm ? '11px' : '18px'
+                columnGap: isSm ? '11px' : '18px',
+                p: '4px'
             }}
         >
 
@@ -77,6 +78,8 @@ const RandomPlayList = (props) => {
                 sx={{
                     position: 'relative',
                     borderRadius: '3px',
+                    width: height,
+                    height: height,
                     ...(promotion && {
                         '&::before': {
                             content: promotion === 'vip' ? "url('/images/dvip.png')" : promotion === 'coin' ? "url('/images/dcoin.png')" : "url('/images/dfree.png')",
@@ -171,6 +174,8 @@ function AudioBook({ router }) {
     const [playlists, setPlaylists] = useState([]);
     const [playlistsRandom, setPlaylistsRandom] = useState([]);
     const [initPlaylists, setInitPlaylists] = useState([]);
+    const [hasLoadMore, setHasLoadMore] = useState(true);
+    const [hasLoadMoreRandom, setHasLoadMoreRandom] = useState(true);
 
     useEffect(() => {
         const code = pathname.replace('-', '_').slice(1);
@@ -220,12 +225,21 @@ function AudioBook({ router }) {
                 return;
             }
             else {
-                const res = await api.getCategoryPlaylists(categoryCode, 35);
-                const results = await res.data.data;
-                setPlaylists(results);
+                try {
+                    const res = await api.getCategoryPlaylists(categoryCode, 35);
+                    const results = await res.data.data;
+                    if (results.length < 35) {
+                        setHasLoadMore(false);
+                    }
+                    setPlaylists(results);
+                }
+                catch (err) {
+                    console.log(err)
+                }
             }
         }
 
+        setHasLoadMore(true);
         fetchPlaylists();
     }, [categoryCode])
 
@@ -262,9 +276,26 @@ function AudioBook({ router }) {
         const ignore_ids = playlistsRandom.map(i => i.id).join(',')
         const res = await api.getCategoryPlaylists(code, NUM_PLAYLIST_RANDOM, ignore_ids, 'latest', 1);
         const data = await res.data.data;
+        if (data.length < NUM_PLAYLIST_RANDOM) {
+            setHasLoadMoreRandom(false);
+        }
         setPlaylistsRandom([...playlistsRandom, ...data]);
     }
 
+    const handleLoadMorePlaylist = async () => {
+        try {
+            const ignore_ids = [... new Set(playlists.map(i => i.id))];
+            const res = await api.getCategoryPlaylists(categoryCode, 35, ignore_ids);
+            const results = await res.data.data;
+            if (results.length < 35) {
+                setHasLoadMore(false);
+            }
+            setPlaylists([...playlists, ...results]);
+        }
+        catch (err) {
+            console.log(err)
+        }
+    }
     return (
         <Box
             sx={{
@@ -340,7 +371,7 @@ function AudioBook({ router }) {
                                     {playlists.map((item) => (
                                         <Link
                                             key={item.id}
-                                            href={`/playlists/${item.id}`}
+                                            href={`/play/${item.id}`}
                                         >
                                             <a
                                                 style={{ width: `calc(100% / ${isSm ? 2 : 5} - 19.2px)` }}
@@ -358,6 +389,34 @@ function AudioBook({ router }) {
                                         </Link>
                                     ))}
                                 </Box>
+                                {
+                                    hasLoadMore && (
+                                        <Box
+                                            sx={{
+                                                mt: '26px',
+                                                mb: '80px',
+                                                textAlign: 'center',
+                                                width: '100%'
+                                            }}
+                                        >
+                                            <Button
+                                                variant="outlined"
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    color: COLORS.white,
+                                                    ...TEXT_STYLE.title1,
+                                                    borderRadius: '8px',
+                                                    height: '48px',
+                                                    width: '142px',
+                                                    border: `1px solid ${COLORS.blackStroker}`
+                                                }}
+                                                onClick={handleLoadMorePlaylist}
+                                            >
+                                                Xem thêm
+                                            </Button>
+                                        </Box>
+                                    )
+                                }
                             </Box>
 
                         </Box>
@@ -365,7 +424,7 @@ function AudioBook({ router }) {
                 }
             </Box>
             {
-                !['/children-book', '/summary-book'].includes(pathname) && (
+                (!['/children-book', '/summary-book'].includes(pathname) && categoryCode === null) && (
                     <Box
                         sx={{
                             width: '100%'
@@ -375,55 +434,63 @@ function AudioBook({ router }) {
                     </Box>
                 )
             }
-            <Box
-                sx={{
-                    p: `0 ${SIDE_PADDING}px`,
-                    mt: !['/children-book', '/summary-book'].includes(pathname) ? '58px' : 0,
-                    ...flexStyle('flex-start', 'center'),
-                    rowGap: isSm ? '20px' : '22px',
-                    flexWrap: 'wrap',
-                    ...(!isSm && { columnGap: '28px' })
-                }}
-            >
-                {
-                    playlistsRandom.map(i => (
-                        <Link
-                            href={`/playlists/${i?.id}`}
-                            key={i?.id}
-                        >
-                            <a
-                                className={isSm ? 'random-playlist-link-mb' : 'random-playlist-link-desktop'}
-                            >
-                                <RandomPlayList data={i} isSm={isSm} />
-                            </a>
-                        </Link>
-                    ))
-                }
-                <Box
-                    sx={{
-                        mt: '26px',
-                        mb: '80px',
-                        textAlign: 'center',
-                        width: '100%'
-                    }}
-                >
-                    <Button
-                        onClick={handleLoadMoreRandomPlaylist}
-                        variant="outlined"
+            {
+                categoryCode === null && (
+                    <Box
                         sx={{
-                            textTransform: 'none',
-                            color: COLORS.white,
-                            ...TEXT_STYLE.title1,
-                            borderRadius: '8px',
-                            height: '48px',
-                            width: '142px',
-                            border: `1px solid ${COLORS.blackStroker}`
+                            p: `0 ${SIDE_PADDING}px`,
+                            mt: !['/children-book', '/summary-book'].includes(pathname) ? '58px' : 0,
+                            ...flexStyle('flex-start', 'center'),
+                            rowGap: isSm ? '20px' : '22px',
+                            flexWrap: 'wrap',
+                            ...(!isSm && { columnGap: '28px' })
                         }}
                     >
-                        Xem thêm
-                    </Button>
-                </Box>
-            </Box>
+                        {
+                            playlistsRandom.map(i => (
+                                <Link
+                                    href={`/play/${i?.id}`}
+                                    key={i?.id}
+                                >
+                                    <a
+                                        className={isSm ? 'random-playlist-link-mb' : 'random-playlist-link-desktop'}
+                                    >
+                                        <RandomPlayList data={i} isSm={isSm} />
+                                    </a>
+                                </Link>
+                            ))
+                        }
+                        {
+                            hasLoadMoreRandom && (
+                                <Box
+                                    sx={{
+                                        mt: '26px',
+                                        mb: '80px',
+                                        textAlign: 'center',
+                                        width: '100%'
+                                    }}
+                                >
+                                    <Button
+                                        onClick={handleLoadMoreRandomPlaylist}
+                                        variant="outlined"
+                                        sx={{
+                                            textTransform: 'none',
+                                            color: COLORS.white,
+                                            ...TEXT_STYLE.title1,
+                                            borderRadius: '8px',
+                                            height: '48px',
+                                            width: '142px',
+                                            border: `1px solid ${COLORS.blackStroker}`
+                                        }}
+                                    >
+                                        Xem thêm
+                                    </Button>
+                                </Box>
+                            )
+                        }
+                    </Box>
+                )
+            }
             <PublisherComponent isSm={isSm} />
         </Box >
     )

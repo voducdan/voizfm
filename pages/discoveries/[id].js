@@ -6,12 +6,14 @@ import API from '../../src/services/api';
 
 const DiscoveryDetailPage = ({ discovery }) => {
     return (
-        <DiscoveryDetail discovery={discovery} />
+        // <DiscoveryDetail discovery={discovery} />
+        ''
     )
 }
 
 export async function getServerSideProps(context) {
-    const api = new API();
+    const { token } = context.req.cookies;
+    const api = new API(token);
 
     const pageLimit = 10;
     const { params } = context;

@@ -9,6 +9,26 @@ import { flexStyle } from '../../utils/flexStyle'
 import { TEXT_STYLE, COLORS, SCREEN_BREAKPOINTS } from '../../utils/constants';
 import useWindowSize from '../../utils/useWindowSize';
 
+const h3 = {
+    fontSize: '30px',
+    lineHeight: '40px',
+    fontWeight: 'bold',
+    fontFamily: 'SF UI Display'
+};
+const h4 = {
+    fontSize: '25px',
+    lineHeight: '40px',
+    fontWeight: 'bold',
+    fontFamily: 'SF UI Display'
+};
+
+const content1 = {
+    fontSize: '18px',
+    lineHeight: '24px',
+    fontWeight: 500,
+    fontFamily: 'SF UI Display'
+}
+
 const CustomBox = (props) => {
     const { imgSrc, content, len, colGap, isSm } = props
     return (
@@ -25,10 +45,10 @@ const CustomBox = (props) => {
             <Typography
                 sx={{
                     width: isSm ? '100%' : '70%',
-                    ...TEXT_STYLE.content1,
-                    color: COLORS.white,
+                    ...(isSm ? TEXT_STYLE.content2 : content1),
+                    color: isSm ? COLORS.contentIcon : COLORS.white,
                     whiteSpace: 'break-spaces',
-                    textAlign: 'center'
+                    textAlign: 'center',
                 }}
             >{content}</Typography>
         </Box>
@@ -116,13 +136,13 @@ export default function VipBenefit() {
                         >
                             <Typography
                                 sx={{
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
                             >Nghe không giới hạn</Typography>
                             <span
                                 style={{
-                                    ...(isSm ? TEXT_STYLE.title4 : TEXT_STYLE.h1),
+                                    ...(isSm ? TEXT_STYLE.title4 : h3),
                                     color: COLORS.second,
                                     marginRight: '5px'
                                 }}
@@ -130,7 +150,7 @@ export default function VipBenefit() {
                             <Typography
                                 sx={{
                                     display: 'inline',
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
                             >nội dung</Typography>
@@ -151,13 +171,13 @@ export default function VipBenefit() {
                         >
                             <Typography
                                 sx={{
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
-                            >Nhiều nộ dung</Typography>
+                            >Nhiều nội dung</Typography>
                             <span
                                 style={{
-                                    ...(isSm ? TEXT_STYLE.title4 : TEXT_STYLE.h1),
+                                    ...(isSm ? TEXT_STYLE.title4 : h3),
                                     color: COLORS.second
                                 }}
                             >Độc quyền</span>
@@ -178,20 +198,20 @@ export default function VipBenefit() {
                         >
                             <span
                                 style={{
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
                             >Người</span>
                             <span
                                 style={{
-                                    ...(isSm ? TEXT_STYLE.title4 : TEXT_STYLE.h1),
+                                    ...(isSm ? TEXT_STYLE.title4 : h3),
                                     color: COLORS.second,
                                     marginLeft: '5px'
                                 }}
                             >Đầu tiên</span>
                             <Typography
                                 sx={{
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
                             >nghe sách mới</Typography>
@@ -212,13 +232,13 @@ export default function VipBenefit() {
                         >
                             <Typography
                                 style={{
-                                    ...(isSm ? TEXT_STYLE.title4 : TEXT_STYLE.h1),
+                                    ...(isSm ? TEXT_STYLE.title4 : h3),
                                     color: COLORS.second
                                 }}
-                            >-10%</Typography>
+                            >-25%</Typography>
                             <Typography
                                 sx={{
-                                    ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
+                                    ...(isSm ? TEXT_STYLE.title1 : h4),
                                     color: COLORS.white
                                 }}
                             >Khi mua sách lẻ</Typography>

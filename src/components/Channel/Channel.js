@@ -92,11 +92,11 @@ export default function Channel() {
     const getPlaylistImgWidth = () => {
         const width = windowSize.width;
         let innerWidth = width - SIDE_PADDING * 2;
-        const spaceToBeSubstrcted = ((NUMBER_ITEMS_PER_LINE - 1) * SPACE_BETWEEN) / NUMBER_ITEMS_PER_LINE;
+        const spaceToBeSubstracted = ((NUMBER_ITEMS_PER_LINE - 1) * SPACE_BETWEEN) / NUMBER_ITEMS_PER_LINE;
         if (!isSm) {
             innerWidth -= DRAWER_WIDTH;
         }
-        return (innerWidth / NUMBER_ITEMS_PER_LINE) - spaceToBeSubstrcted;
+        return (innerWidth / NUMBER_ITEMS_PER_LINE) - spaceToBeSubstracted;
     }
 
     const handleLoadMoreChannel = () => {
@@ -188,14 +188,22 @@ export default function Channel() {
                                     startIcon={i?.is_bookmark ? <CheckIcon /> : <AddIcon />}
                                 >{i?.is_bookmark ? 'Hủy theo dõi' : 'Theo dõi'}</Button>
                             </Box>
-                            <Swiper slidesPerView={numItemsPerLine} spaceBetween={24}
-                                style={{ marginBottom: isSm ? 35 : 56 }}
+                            <Swiper
+                                slidesPerView={numItemsPerLine}
+                                spaceBetween={isSm ? 8 : 24}
+                                style={{
+                                    marginBottom: isSm ? 35 : 56
+                                }}
                             >
                                 {i?.playlists.map(item => (
-                                    <SwiperSlide key={item?.id}>
+                                    <SwiperSlide
+                                        key={item?.id}
+                                        style={{
+                                            height: `${getPlaylistImgWidth()}px`
+                                        }}
+                                    >
                                         <Link
-                                            href={`/playlists/${item?.id}`}
-                                            tyle={{ width: '100%', height: `${getPlaylistImgWidth()}px` }}
+                                            href={`/play/${item?.id}`}
                                         >
                                             <a>
                                                 <Thumbnail style={{ width: '100%', height: '100%', borderRadius: 3 }} avtSrc={item?.avatar?.thumb_url} alt={`images ${item?.name}`} ></Thumbnail>

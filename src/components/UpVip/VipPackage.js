@@ -1,6 +1,9 @@
 // import react
 import { useState, useEffect } from 'react';
 
+// import next link
+import Link from 'next/link';
+
 // import next router
 import { useRouter } from 'next/router';
 
@@ -42,7 +45,8 @@ const VipPackageBenefitItem = (props) => {
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.caption10Regular : TEXT_STYLE.content1),
-                    color: idx === 2 ? COLORS.second : COLORS.contentIcon
+                    color: idx === 2 ? COLORS.second : COLORS.contentIcon,
+                    textAlign: 'left'
                 }}
             >{benefit}</Typography>
         </Box >
@@ -58,6 +62,7 @@ const VipPackagePaper = (props) => {
                 bgcolor: bgcolor,
                 height: `${height}px`,
                 borderRadius: '10px',
+                cursor: 'pointer',
                 ...(idx === selectedPackage && { border: '2px solid #F68C2D' })
             }}
             elevation={elevation}>
@@ -66,7 +71,7 @@ const VipPackagePaper = (props) => {
                     <Typography
                         sx={{
                             ...TEXT_STYLE.h2,
-                            color: COLORS.white,
+                            color: idx >= 1 ? COLORS.second : COLORS.white,
                             textAlign: 'center',
                             mt: '26px'
                         }}
@@ -83,7 +88,7 @@ const VipPackagePaper = (props) => {
             >{formatPrice(data.price)}đ</Typography>
             <Typography
                 sx={{
-                    ...(isSm ? TEXT_STYLE.VZ_Text_content : TEXT_STYLE.h2),
+                    ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.h2),
                     color: isSm ? COLORS.white : COLORS.contentIcon,
                     textAlign: 'center',
                     mt: isSm ? '5px' : '16px'
@@ -112,7 +117,7 @@ const VipPackagePaper = (props) => {
                                 mb: '22px'
                             }}
                         >
-                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Nghe thoải mái'} idx={0} />
+                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Không bị giới hạn sách VIP nghe mỗi tháng'} idx={0} />
                             < VipPackageBenefitItem isSm={isSm} key={1} benefit={'Được tải về đt'} idx={0} />
                         </Box>
                     )
@@ -129,9 +134,9 @@ const VipPackagePaper = (props) => {
                                 mb: '22px'
                             }}
                         >
-                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Nghe thoải mái'} idx={0} />
+                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Không bị giới hạn sách VIP nghe mỗi tháng'} idx={0} />
                             < VipPackageBenefitItem isSm={isSm} key={1} benefit={'Được tải về đt'} idx={0} />
-                            < VipPackageBenefitItem isSm={isSm} key={2} benefit={'Tiết kiệm 33%'} idx={2} />
+                            < VipPackageBenefitItem isSm={isSm} key={2} benefit={'Khoảng 66,000đ/tháng'} idx={2} />
                         </Box>
                     )
                 }
@@ -147,9 +152,9 @@ const VipPackagePaper = (props) => {
                                 mb: '22px'
                             }}
                         >
-                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Nghe thoải mái'} idx={0} />
+                            < VipPackageBenefitItem isSm={isSm} key={0} benefit={'Không bị giới hạn sách VIP nghe mỗi tháng'} idx={0} />
                             < VipPackageBenefitItem isSm={isSm} key={1} benefit={'Được tải về đt'} idx={0} />
-                            < VipPackageBenefitItem isSm={isSm} key={2} benefit={'Tiết kiệm 33%'} idx={2} />
+                            < VipPackageBenefitItem isSm={isSm} key={2} benefit={'Khoảng 58,000đ/tháng'} idx={2} />
                         </Box>
                     )
                 }
@@ -191,8 +196,10 @@ export default function VipPackage() {
     const handleRegisterVip = () => {
         const paymentData = {
             selectedItem: [{
+                type: 'vip_package',
                 id: vipPackages[selectedPackage]['id'],
-                name: vipPackages[selectedPackage]['name']
+                name: vipPackages[selectedPackage]['name'],
+                pay_price: vipPackages[selectedPackage]['price']
             }],
             discountCode: vipPackages[selectedPackage]['sale_code'] || null,
             package_type: 'plan_package',
@@ -213,11 +220,11 @@ export default function VipPackage() {
             >
                 <Typography
                     sx={{
-                        ...TEXT_STYLE.h1,
+                        ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h1),
                         color: COLORS.white,
                         textAlign: 'center'
                     }}
-                >Các gói thành viên VIP</Typography>
+                >Gói thành viên VIP</Typography>
             </Box>
             <Box
                 sx={{
@@ -276,29 +283,34 @@ export default function VipPackage() {
                     textAlign: 'center'
                 }}
             >
-                <Typography
+                {/* <Typography
                     sx={{
-                        ...TEXT_STYLE.title1,
+                        ...(isSm ? TEXT_STYLE.title2 : TEXT_STYLE.title1),
                         color: COLORS.white
                     }}
                 >Nghe thoải mái *, trừ dần theo thực tế sử dụng</Typography>
                 <Typography
                     sx={{
-                        ...TEXT_STYLE.content1,
+                        ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
                         color: COLORS.VZ_Text_content,
                         mt: '8px'
                     }}
-                >Không tự động gia hạn, phù hợp cho người mới bắt đầu</Typography>
-                <Typography
-                    sx={{
-                        ...TEXT_STYLE.content1,
-                        color: COLORS.bg4,
-                        mt: '40px',
-                        mb: '80px',
-                        textDecoration: 'underline'
-                    }}
-                >Hỗ trợ khi gặp vấn đề trong thanh toán</Typography>
-
+                >Không tự động gia hạn, phù hợp cho người mới bắt đầu</Typography> */}
+                <a
+                    href='http://m.me/VoizFM'
+                    target='_blank'
+                >
+                    <Typography
+                        sx={{
+                            ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
+                            color: COLORS.bg4,
+                            mt: '40px',
+                            mb: '80px',
+                            textDecoration: 'underline',
+                            cursor: 'pointer'
+                        }}
+                    >Hỗ trợ khi gặp vấn đề trong thanh toán</Typography>
+                </a>
             </Box>
         </Box>
     )

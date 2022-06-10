@@ -46,8 +46,7 @@ const DiscoveryItem = (props) => {
                 sx={{
                     alignContent: 'flex-start',
                     overflow: 'hidden',
-                    margin: 0,
-                    cursor: 'pointer'
+                    margin: 0
                 }}
             >
                 {discoveryList.map((item, index) => (
@@ -64,7 +63,8 @@ const DiscoveryItem = (props) => {
                             <Card
                                 sx={{
                                     bgcolor: COLORS.bg2,
-                                    margin: 0
+                                    margin: 0,
+                                    cursor: 'pointer'
                                 }}>
                                 <Box
                                     sx={{
@@ -199,33 +199,35 @@ const DiscoveryItem = (props) => {
 }
 
 export default function DiscoveryContent() {
+    const api = new API();
+    const limit = 15;
     const windowSize = useWindowSize();
     const [categoryList, setCategoryList] = useState([]);
     const [discoveryList, setDiscoveryList] = useState([]);
     const [showedDiscoveryList, setShowedDiscoveryList] = useState([]);
+    const [code, setCode] = useState('');
+    const [page, setPage] = useState(1);
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
 
     useEffect(() => {
-        function getChannelFromDiscovery(data) {
-            const arrayUniqueByKey = [...new Map(data.map(item =>
-                [item['channel']['id'], { code: item['channel']['id'], name: item['channel']['name'] }])).values()];
-            return arrayUniqueByKey
-        };
-
-        async function fetchDiscoveries() {
-            const api = new API();
-            const res = await api.getDiscoveries();
-            const data = await res.data.data;
-            const categories = getChannelFromDiscovery(data);
-            setDiscoveryList(data);
-            setShowedDiscoveryList(data);
-            setCategoryList([...categories]);
+        if (page) {
+            fetchDiscoveries()
         }
+    }, [page]);
 
-        fetchDiscoveries()
-    }, []);
+    useEffect(() => {
+        if (discoveryList.length === 0) {
+            return;
+        }
+        if (code !== '') {
+            onSelectCategory(_, code);
+            return;
+        }
+        setShowedDiscoveryList([...discoveryList]);
+    }, [discoveryList]);
 
-    const onSelectCategory = async (parent, code) => {
+    const onSelectCategory = async (_, code) => {
+        setCode(code);
         if (code === '') {
             setShowedDiscoveryList([...discoveryList]);
         }
@@ -233,6 +235,25 @@ export default function DiscoveryContent() {
             const tmpPlaylists = discoveryList.filter(i => i.channel.id === Number(code));
             setShowedDiscoveryList([...tmpPlaylists]);
         }
+    }
+
+    const getChannelFromDiscovery = (data) => {
+        const arrayUniqueByKey = [...new Map(data.map(item =>
+            [item['channel']['id'], { code: item['channel']['id'], name: item['channel']['name'] }])).values()];
+        return arrayUniqueByKey
+    };
+
+    const fetchDiscoveries = async () => {
+        const res = await api.getDiscoveries(limit, page);
+        const data = await res.data.data;
+        const allDiscovery = [...discoveryList, ...data];
+        const categories = getChannelFromDiscovery(allDiscovery);
+        setDiscoveryList(allDiscovery);
+        setCategoryList([...categories]);
+    }
+
+    const handleLoadMoreDiscovery = () => {
+        setPage(page + 1);
     }
 
     return (
@@ -250,6 +271,27 @@ export default function DiscoveryContent() {
             </Box>
             <Divider sx={{ borderColor: COLORS.bg2, margin: '28px 0' }} />
             {showedDiscoveryList.length > 0 && (<DiscoveryItem isSm={isSm} discoveryList={showedDiscoveryList} />)}
+            <Box
+                onClick={handleLoadMoreDiscovery}
+                sx={{
+                    width: '100%',
+                    ...flexStyle('center', 'center'),
+                    cursor: 'pointer'
+                }}
+            >
+                <img
+                    src="/images/discoveryLoadmore.png"
+                    alt="load more btn"
+                />
+            </Box>
+            {!isSm && (
+                <Divider
+                    sx={{
+                        background: COLORS.blackStroker,
+                        m: '44px 50px 0 50px'
+                    }}
+                />
+            )}
         </Box>
     )
 }

@@ -52,10 +52,11 @@ export default function FAQ() {
 
     return (
         <Box>
-
             <Box
                 sx={{
-                    bgcolor: COLORS.bg2
+                    bgcolor: COLORS.bg2,
+                    pb: '32px',
+                    boxSizing: 'border-box'
                 }}
             >
                 <Box>
@@ -129,8 +130,9 @@ export default function FAQ() {
             </Box>
             <Box
                 sx={{
-                    width: '80%',
-                    margin: '32px auto 0 auto',
+                    width: '100%',
+                    p: isSm ? '32px 16px 0 16px' : '32px 160px 0 160px',
+                    boxSizing: 'border-box',
                     ...flexStyle('space-between', 'center')
                 }}
             >
@@ -168,22 +170,34 @@ export default function FAQ() {
                     margin: '56px auto 80px auto'
                 }}
             >
-                <Button
-                    sx={{
-                        ...TEXT_STYLE.title1,
-                        color: COLORS.white,
-                        textTransform: 'none',
-                        height: '48px',
-                        width: '100%',
-                        border: `1px solid ${COLORS.blackStroker}`,
-                        borderRadius: '8px'
+                <a
+                    href='http://m.me/VoizFM'
+                    target='_blank'
+                    style={{
+                        textDecoration: 'none'
                     }}
-                    variant="outlined"
                 >
-                    Bạn cần được tư vấn trực tiếp?
-                </Button>
+                    <Button
+                        sx={{
+                            ...TEXT_STYLE.title1,
+                            color: COLORS.white,
+                            textTransform: 'none',
+                            height: '48px',
+                            width: '100%',
+                            border: `1px solid ${COLORS.blackStroker}`,
+                            borderRadius: '8px'
+                        }}
+                        variant="outlined"
+                    >
+                        Bạn cần được tư vấn trực tiếp?
+                    </Button>
+                </a>
             </Box>
-            <Divider sx={{ width: '90%', margin: 'auto', borderColor: COLORS.blackStroker }} />
+            {
+                !isSm && (
+                    <Divider sx={{ width: '90%', margin: 'auto', borderColor: COLORS.blackStroker }} />
+                )
+            }
         </Box>
     )
 }

@@ -82,6 +82,8 @@ export default function AudioPlay({ audioFromApi }) {
             sx={{
                 ...flexStyle('flex-start', 'center'),
                 flexDirection: 'column',
+                bgcolor:COLORS.bg1,
+                zIndex:99,
                 position: 'fixed',
                 width: openSidebar ? `calc(100% - ${DRAWER_WIDTH}px)` : '100%',
                 height: `calc(100vh - ${isSm ? HEADER_HEIGHT_MB : HEADER_HEIGHT} - ${isSm ? '299px' : '100px'})`,
@@ -342,7 +344,7 @@ export default function AudioPlay({ audioFromApi }) {
                             borderRadius: '6px',
                             marginTop: '40px',
                             cursor: 'text',
-                            ...((playing || isSm) && {
+                            ...((!playing || isSm) && {
                                 display: 'none'
                             })
                         }}

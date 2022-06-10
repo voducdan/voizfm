@@ -92,7 +92,6 @@ export default function AppInfo(props) {
         async function fetchVersion() {
             const res = await api.getVersion();
             const data = await res.data;
-            console.log(data);
         }
 
         fetchVersion();

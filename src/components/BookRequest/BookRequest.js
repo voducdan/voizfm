@@ -1,6 +1,12 @@
 // import react
 import { useState, useEffect } from 'react';
 
+// import redux
+import { useSelector } from 'react-redux';
+
+// Import redux reducer, actions
+import { selectToken } from '../../redux/token';
+
 // import MUI components
 import {
     Box,
@@ -9,11 +15,13 @@ import {
     Input,
     InputAdornment,
     Avatar,
-    Snackbar
+    Divider
 } from '@mui/material';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import CheckIcon from '@mui/icons-material/Check';
+
+import {
+    Pencil1, Send
+} from '../../components/Icons/index';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
@@ -26,13 +34,11 @@ import { OpenBook } from '../../components/Icons/index';
 // import service
 import API from '../../services/api';
 
-// import date-fns
-import { format } from 'date-fns'
-
 export default function BookRequest() {
     const api = new API();
     const windowSize = useWindowSize();
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
+    const token = useSelector(selectToken);
     const [requestName, setRequestName] = useState('');
     const [requestSuccess, setRequestSuccess] = useState(false);
     const [requestedBooks, setRequestedBooks] = useState([]);
@@ -44,7 +50,9 @@ export default function BookRequest() {
             const data = res.data.data;
             setRequestedBooks(data);
         }
-        fetchRequestedBook();
+        if (token) {
+            fetchRequestedBook();
+        }
     }, [])
 
     useEffect(() => {
@@ -67,7 +75,7 @@ export default function BookRequest() {
     const handleSendRequest = async () => {
         const res = await api.requestedBook({ body: requestName })
         const data = await res.data.data;
-        const tmpRequestedBooks = [data, ...requestedBooks];
+        const tmpRequestedBooks = [...requestedBooks, data];
         setRequestedBooks(tmpRequestedBooks);
         setRequestSuccess(true);
         setRequestName('');
@@ -115,15 +123,18 @@ export default function BookRequest() {
                         }}
                     >Đề nghị sách</Typography>
                 </Box>
-                <Box>
+                <Box
+                    sx={{
+                        mt: isSm ? '14px' : '24px',
+                        mb: isSm ? '59px' : '80px'
+                    }}
+                >
                     <Typography
                         sx={{
                             ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h1),
-                            color: COLORS.white,
-                            mt: isSm ? '18px' : '26px',
-                            mb: isSm ? '65px' : '108px'
+                            color: COLORS.white
                         }}
-                    >Vui lòng nhập tựa sách bạn muốn yêu cầu</Typography>
+                    >Vui lòng nhập tựa sách bạn muốn yêu cầu.</Typography>
                 </Box>
                 <Box
                     sx={{
@@ -131,26 +142,44 @@ export default function BookRequest() {
                         position: 'relative'
                     }}
                 >
-                    <FormControl fullWidth sx={{ m: 1 }} variant="standard">
+                    <FormControl
+                        fullWidth
+                        variant="standard"
+                    >
                         <Input
                             placeholder='Nhập càng nhiều càng tốt nhé!'
                             value={requestName}
                             onChange={handleChange}
                             sx={{
-                                color: COLORS.placeHolder,
+                                color: COLORS.white,
                                 fontFamily: 'Mulish',
                                 fontWeight: 500,
                                 fontSize: '1rem',
                                 lineHeight: '20px',
-                                pb: '24px',
+                                alignItems: 'flex-end',
+                                height: isSm ? '32px' : '48px',
+                                '::after': {
+                                    border: 'none'
+                                },
                                 'input': {
                                     ml: '8px',
+                                    p: 0
                                 },
                                 '::before': {
-                                    borderBottom: `1px solid ${COLORS.bg2}`
+                                    borderBottom: `1px solid ${COLORS.bg2}`,
+                                    bottom: isSm ? '-18px' : '-24px'
                                 }
                             }}
-                            startAdornment={<InputAdornment position="start"><EditOutlinedIcon sx={{ color: COLORS.placeHolder }} /></InputAdornment>}
+                            startAdornment={
+                                <InputAdornment
+                                    position="start"
+                                    sx={{
+                                        height: '100%'
+                                    }}
+                                >
+                                    <Pencil1 />
+                                </InputAdornment>
+                            }
                             endAdornment={
                                 <InputAdornment
                                     onClick={handleSendRequest}
@@ -158,19 +187,16 @@ export default function BookRequest() {
                                     sx=
                                     {{
                                         bgcolor: isFormValid ? COLORS.main : COLORS.bg3,
-                                        width: isSm ? '32px' : '48px',
+                                        width: isSm ? '54px' : '70px',
                                         height: isSm ? '32px' : '48px',
                                         maxHeight: isSm ? '32px' : '48px',
                                         maxWidth: isSm ? '32px' : '48px',
                                         borderRadius: '50%',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        ...flexStyle('center', 'center')
                                     }}
                                 >
-                                    <ArrowRightAltIcon
-                                        sx={{
-                                            color: COLORS.white,
-                                            p: isSm ? '4px' : '12px'
-                                        }} />
+                                    <Send />
                                 </InputAdornment>}
                         />
                     </FormControl>
@@ -195,7 +221,7 @@ export default function BookRequest() {
                                         ...TEXT_STYLE.content1,
                                         color: COLORS.white
                                     }}
-                                >Nội dung bạn yêu cầu đã được gửi</Typography>
+                                >Nội dung bạn yêu cầu đã được gửi.</Typography>
                             </Box>
                         )
                     }
@@ -206,15 +232,19 @@ export default function BookRequest() {
                         mt: '60px'
                     }}
                 >
-                    <Typography
-                        sx={{
-                            ...TEXT_STYLE.title1,
-                            color: COLORS.white,
-                            mb: '32px'
-                        }}
-                    >
-                        Góp ý của bạn
-                    </Typography>
+                    {
+                        requestedBooks.length > 0 && (
+                            <Typography
+                                sx={{
+                                    ...TEXT_STYLE.title1,
+                                    color: COLORS.white,
+                                    mb: '32px'
+                                }}
+                            >
+                                Góp ý của bạn
+                            </Typography>
+                        )
+                    }
                     <Box
                         sx={{
                             ...flexStyle('center', 'flex-start'),
@@ -228,7 +258,7 @@ export default function BookRequest() {
                                     key={idx}
                                     sx={{
                                         width: '100%',
-                                        ...flexStyle('space-between', 'center'),
+                                        ...(isSm ? flexStyle('space-between', 'flex-start') : flexStyle('space-between', 'center')),
                                         ...(isSm && { flexDirection: 'column', rowGap: '8px' })
                                     }}
                                 >
@@ -244,7 +274,7 @@ export default function BookRequest() {
                                         </Box>
                                         <Box
                                             sx={{
-                                                ...flexStyle('center', 'flex-starrt'),
+                                                ...flexStyle('center', 'flex-start'),
                                                 flexDirection: 'column',
                                                 rowGap: '15px'
                                             }}
@@ -283,6 +313,7 @@ export default function BookRequest() {
                                             sx={{
                                                 ...TEXT_STYLE.content3,
                                                 color: COLORS.contentIcon,
+                                                textAlign: 'right',
                                                 pl: isSm ? '46px' : 0
                                             }}
                                         >{item?.published_at}</Typography>
@@ -293,6 +324,12 @@ export default function BookRequest() {
                     </Box>
                 </Box>
             </Box>
-        </Box>
+            <Divider
+                sx={{
+                    background: COLORS.blackStroker,
+                    m: '227px 50px 0 50px'
+                }}
+            />
+        </Box >
     )
 }

@@ -17,12 +17,13 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import DeleteIcon from '@mui/icons-material/Delete';
 
 // import others components
 import PlaylistThumnail from '../../components/Shared/PlaylistThumbnail'
-
+import {
+    AccessTime,
+    Trash
+} from '../../components/Icons/index';
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
 import { TEXT_STYLE, COLORS, SCREEN_BREAKPOINTS, HEADER_HEIGHT, HEADER_HEIGHT_MB } from '../../utils/constants';
@@ -67,7 +68,7 @@ const AudioDuration = (props) => {
                     columnGap: '6px'
                 }}
             >
-                <AccessTimeIcon sx={{ color: COLORS.contentIcon, width: isSm ? '12px' : '16px', height: isSm ? '12px' : '16px' }} />
+                <AccessTime />
                 <Typography
                     sx={{
                         ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
@@ -209,6 +210,13 @@ export default function Listening() {
         setDeleteList([...tmpDeleteList]);
     }
 
+    const handleDeleteAll = () => {
+        const selectdItems = deleteList.filter(i => i.checked === true).map(i => i.id);
+        if (selectdItems.length > 0) {
+            handleConfirmDeleteModalOpen('Bạn có chắc chắn muốn xóa những audio này không?');
+        }
+    }
+
     return (
         <Box
             sx={{
@@ -245,7 +253,7 @@ export default function Listening() {
                                     color: COLORS.white,
                                     textTransform: 'none'
                                 }}
-                                endIcon={<DeleteIcon fontSize="small" sx={{ color: COLORS.VZ_Text_content }} />}
+                                endIcon={<Trash fontSize="small" />}
                             >Xóa tất cả</Button>
                         )
                     }
@@ -276,13 +284,13 @@ export default function Listening() {
                     {
                         isDeleteMode && (
                             <Button
-                                onClick={() => { handleConfirmDeleteModalOpen('Bạn có chắc chắn muốn xóa những audio này không?') }}
+                                onClick={handleDeleteAll}
                                 sx={{
                                     ...(isSm ? TEXT_STYLE.title2 : TEXT_STYLE.title1),
                                     color: COLORS.white,
                                     textTransform: 'none'
                                 }}
-                            >Hoàn thành</Button>
+                            >Xoá</Button>
                         )
                     }
                 </Box>
@@ -320,14 +328,22 @@ export default function Listening() {
                                     }}
                                 >
                                     <PlaylistThumnail
-                                        id={i?.playlist?.id}
+                                        id={i?.last_audio_id}
                                         name={i?.playlist?.name}
                                         src={i?.playlist?.avatar?.thumb_url}
                                         authors={i?.playlist?.authors}
                                         hasDelete={true}
                                         promotion={i?.promotion}
+                                        isAudio={true}
+                                        playlistId={i?.playlist?.id}
                                         handleConfirmDeleteModalOpen={handleClickDeleteSingleAudio}
-                                        children={<AudioDuration isSm={isSm} duration={i?.last_duration} listened_percent={i?.listened_percent} />}
+                                        children={
+                                            <AudioDuration
+                                                isSm={isSm}
+                                                duration={i?.last_duration}
+                                                listened_percent={i?.listened_percent}
+                                            />
+                                        }
                                     />
                                 </Box>
                             </Box>

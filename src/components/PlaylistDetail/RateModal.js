@@ -14,6 +14,11 @@ import {
 // import others component
 import CustomDisabledButton from '../CustomDisabledButton/CustomDisabledButton';
 
+import {
+    StarEmpty,
+    StarFill
+} from '../../components/Icons/index';
+
 // import utils
 import { COLORS, TEXT_STYLE } from '../../utils/constants';
 import { flexStyle } from '../../utils/flexStyle';
@@ -136,6 +141,8 @@ function RateModal(props) {
                             onChange={(_, newValue) => {
                                 setContentRating(newValue || 0);
                             }}
+                            emptyIcon={<StarEmpty fill='#6B6B6B' />}
+                            icon={<StarFill fill='#F68C2D' />}
                             name="content-rating"
                             value={contentRating}
                             precision={1}
@@ -167,6 +174,8 @@ function RateModal(props) {
                             onChange={(_, newValue) => {
                                 setVoiceRating(newValue || 0);
                             }}
+                            emptyIcon={<StarEmpty fill='#6B6B6B' />}
+                            icon={<StarFill fill='#F68C2D' />}
                             name="voice-rating"
                             value={voiceRating}
                             precision={1}
@@ -195,6 +204,9 @@ function RateModal(props) {
                             padding: isSm ? '10px 17px' : '10px 14px',
                             borderRadius: '8px',
                             height: '100%'
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none'
                         }
                     }}
                     value={rateContent}
@@ -203,6 +215,7 @@ function RateModal(props) {
                     placeholder="Những đóng góp khác, ví dụ: Cảm nhận nội dung, góp ý nhạc nền, thắc mắc về sách,..."
                     multiline rows={5}
                     variant="outlined"
+                    autoComplete="off"
                 />
                 <Box
                     sx={{

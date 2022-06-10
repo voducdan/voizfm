@@ -226,6 +226,7 @@ export default function DiscoveryDetail({ discovery }) {
     const [isCommentError, setIsCommentError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [readOnlyComment, setReadOnlyComment] = useState(false);
+    const [hasLoadMore, setHasLoadMore] = useState(true);
 
     const { id } = useRouter().query;
 
@@ -234,11 +235,14 @@ export default function DiscoveryDetail({ discovery }) {
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
     const coverImgHeight = isSm ? 200 : 380;
 
-    async function fetchDiscoveryComment() {
+    async function fetchDiscoveryComment(page) {
         try {
-            const res = await api.getDiscoveryComment(id, commentPage);
+            const res = await api.getDiscoveryComment(id, page);
             const data = await res.data.data;
             const appendedComments = [...comments, ...data];
+            if (appendedComments.length === inlineDiscovery?.discovery_counter?.comments_count) {
+                setHasLoadMore(false);
+            }
             setComments(appendedComments);
         }
         catch (err) {
@@ -247,7 +251,7 @@ export default function DiscoveryDetail({ discovery }) {
     };
 
     useEffect(() => {
-        fetchDiscoveryComment();
+        fetchDiscoveryComment(commentPage);
     }, [commentPage]);
 
     useEffect(() => {
@@ -279,6 +283,10 @@ export default function DiscoveryDetail({ discovery }) {
     }
 
     const handleComment = async () => {
+        if (!user) {
+            dispatch(setOpenLogin(true));
+            return;
+        }
         if (commentContent) {
             await sendComment(inlineDiscovery.id, { content: commentContent });
         }
@@ -377,7 +385,7 @@ export default function DiscoveryDetail({ discovery }) {
     const handleLoadMoreComment = () => {
         if (comments.length < inlineDiscovery.discovery_counter.comments_count) {
             const nextCommentPage = commentPage + 1;
-            fetchDiscoveryComment(nextCommentPage);
+            // fetchDiscoveryComment(nextCommentPage);
             setCommentPage(nextCommentPage);
         }
     };
@@ -498,7 +506,7 @@ export default function DiscoveryDetail({ discovery }) {
                                 style={{
                                     textDecoration: 'none'
                                 }}
-                                href={`/playlists/${i?.playlist?.id}`}
+                                href={`/play/${i?.playlist?.id}`}
                             >
                                 <Button
                                     sx={{
@@ -573,10 +581,16 @@ export default function DiscoveryDetail({ discovery }) {
                         }}
                         onClick={handleLikeDiscovery}
                     >
-                        <Like
-                            bgfill={inlineDiscovery.is_liked ? COLORS.main : COLORS.white}
-                            fill={inlineDiscovery.is_liked ? COLORS.main : COLORS.white}
-                        />
+                        <Box
+                            sx={{
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Like
+                                bgfill={inlineDiscovery.is_liked ? COLORS.main : COLORS.white}
+                                fill={inlineDiscovery.is_liked ? COLORS.main : COLORS.white}
+                            />
+                        </Box>
                         <Typography
                             sx={{
                                 ...TEXT_STYLE.content2,
@@ -606,31 +620,38 @@ export default function DiscoveryDetail({ discovery }) {
                             <CommentItem user={user} commentInputRef={commentInputRef} updateLike={updateLike} api={api} key={item.id} data={item} />
                         ))
                     }
-                    <Box
-                        sx={{
-                            width: '100%',
-                            ...flexStyle('center', 'center')
-                        }}
-                    >
-                        <Button
-                            onClick={handleLoadMoreComment}
-                            disabled={comments.length >= inlineDiscovery?.discovery_counter?.comments_count}
-                            sx={{
-                                textTransform: 'none',
-                                ...TEXT_STYLE.title2,
-                                color: COLORS.white,
-                                bgcolor: COLORS.main,
-                                width: '170px',
-                                height: '40px',
-                                borderRadius: '50px',
-                                ':hover': {
-                                    bgcolor: COLORS.main
+                    {
+                        hasLoadMore && (
+                            <Box
+                                sx={{
+                                    width: '100%',
+                                    ...flexStyle('center', 'center')
+                                }}
+                            >
+                                {
+                                    comments.length >= 10 && (
+                                        <Button
+                                            onClick={handleLoadMoreComment}
+                                            sx={{
+                                                textTransform: 'none',
+                                                ...TEXT_STYLE.title2,
+                                                color: COLORS.white,
+                                                bgcolor: COLORS.main,
+                                                width: '170px',
+                                                height: '40px',
+                                                borderRadius: '50px',
+                                                ':hover': {
+                                                    bgcolor: COLORS.main
+                                                }
+                                            }}
+                                        >
+                                            Tải thêm góp ý
+                                        </Button>
+                                    )
                                 }
-                            }}
-                        >
-                            Tải thêm góp ý
-                        </Button>
-                    </Box>
+                            </Box>
+                        )
+                    }
                 </Box>
                 <Box
                     sx={{
@@ -665,6 +686,7 @@ export default function DiscoveryDetail({ discovery }) {
                             onClick={handleClickCommentInput}
                             readOnly={readOnlyComment}
                             tabIndex="-1"
+                            autoComplete="off"
                             startAdornment={<BorderColorOutlinedIcon sx={{ color: COLORS.placeHolder }} position="start">$</BorderColorOutlinedIcon>}
                         />
                     </FormControl>

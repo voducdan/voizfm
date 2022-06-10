@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 
 // import next router
-import { useRouter, withRouter } from 'next/router';
+import { useRouter } from 'next/router';
 
 // import next link
 import Link from 'next/link';
@@ -22,7 +22,9 @@ import {
 // import others components
 import Thumbnail from '../Thumbnail/Thumbnail';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import {
+    AccessTime
+} from '../../components/Icons/index';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
@@ -34,11 +36,6 @@ import formatDuration from '../../utils/formatDuration';
 
 // import service
 import API from '../../services/api';
-
-function useQuery() {
-    const { query } = useRouter();
-    return useMemo(() => new URLSearchParams(query), [query]);
-}
 
 const tabs = [
     {
@@ -77,11 +74,25 @@ const SearchResult = (props) => {
                     {searchResults.map((item) => (
                         <Link
                             key={item.id}
-                            href={`/${type}/${item.id}`}
-                            style={{ width: `calc(100% / ${isSm ? numItemPerLine : 5} - ${((numItemPerLine - 1) * playlistRowGap) / numItemPerLine}px)`, height: `${playlistImgWidth}px` }}
+                            href={`/play/${item.id}`}
                         >
-                            <a>
-                                <Thumbnail key={item.id} style={{ width: '100%', height: '100%', borderRadius: 3 }} avtSrc={item?.avatar?.thumb_url} alt={`images ${item.name}`} />
+                            <a
+                                style={{
+                                    width: `calc(100% / ${isSm ? numItemPerLine : 5} - ${((numItemPerLine - 1) * playlistRowGap) / numItemPerLine}px)`,
+                                    height: `${playlistImgWidth}px`
+                                }}
+                            >
+                                <Thumbnail
+                                    key={item.id}
+                                    promotion={item?.promotion}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        borderRadius: 3
+                                    }}
+                                    avtSrc={item?.avatar?.thumb_url}
+                                    alt={`images ${item.name}`}
+                                />
                             </a>
                         </Link>
                     ))}
@@ -96,7 +107,7 @@ const SearchResult = (props) => {
                         width: '100%',
                         ...flexStyle('flex-start', 'center'),
                         flexDirection: 'column',
-                        rowGap: isSm ? 0 : '24px',
+                        rowGap: isSm ? 0 : '8px',
                         mb: '48px'
                     }}
                 >
@@ -107,21 +118,22 @@ const SearchResult = (props) => {
                                 sx={{
                                     width: '100%',
                                     height: isSm ? '74px' : '116px',
+                                    cursor: 'pointer',
                                     ...flexStyle('flex-start', 'center')
                                 }}
                             >
                                 <Link
-                                    href={`/audio-play/${i?.id}`}
+                                    href={`/play/${i?.playlist_id}/?audioId=${i?.id}`}
                                     style={{ textDecoration: 'none', height: '100%', width: '100%' }}
                                 >
                                     <Card
                                         sx={{
-                                            ...flexStyle('flex-start', 'center'),
+                                            ...(isSm ? flexStyle('flex-start', 'center') : flexStyle('flex-start', 'flex-start')),
                                             columnGap: isSm ? '10px' : '20px',
                                             bgcolor: 'inherit',
                                             boxShadow: 'none',
                                             width: '100%',
-                                            height: '100%'
+                                            height: '100%',
                                         }}
                                     >
                                         <Box
@@ -169,7 +181,6 @@ const SearchResult = (props) => {
                                                 sx={{
                                                     ...flexStyle('space-between', 'center'),
                                                     width: '100%',
-                                                    borderBottom: `1px solid ${COLORS.bg2}`,
                                                     height: '100%',
                                                 }}
                                             >
@@ -225,7 +236,7 @@ const SearchResult = (props) => {
                                                                 width: '20%'
                                                             }}
                                                         >
-                                                            <AccessTimeIcon sx={{ color: COLORS.VZ_Text_content }} />
+                                                            <AccessTime />
                                                             <Typography
                                                                 sx={{
                                                                     ...TEXT_STYLE.content1,
@@ -238,6 +249,12 @@ const SearchResult = (props) => {
                                                     )
                                                 }
                                             </Box>
+                                            <Divider
+                                                sx={{
+                                                    borderColor: COLORS.bg2,
+                                                    width: '100%'
+                                                }}
+                                            />
                                         </CardContent>
                                     </Card>
                                 </Link>
@@ -263,7 +280,7 @@ const SearchResult = (props) => {
                                 key={i?.id}
                                 sx={{
                                     width: '100%',
-                                    height: isSm ? '74px' : '116px',
+                                    height: isSm ? '74px' : '100px',
                                     ...flexStyle('flex-start', 'center')
                                 }}
                             >
@@ -278,14 +295,15 @@ const SearchResult = (props) => {
                                             bgcolor: 'inherit',
                                             boxShadow: 'none',
                                             width: '100%',
-                                            height: '100%'
+                                            height: '100%',
+                                            cursor: 'pointer'
                                         }}
                                     >
                                         <Box
                                             sx={{
                                                 width: isSm ? '40px' : '100px',
                                                 height: isSm ? '40px' : '100px',
-                                                position: 'relative'
+                                                position: 'relative',
                                             }}
                                         >
                                             <img
@@ -331,13 +349,13 @@ const SearchResult = (props) => {
                                                 >
                                                     <Typography
                                                         sx={{
-                                                            ...(isSm ? TEXT_STYLE.title2 : TEXT_STYLE.title1),
+                                                            ...TEXT_STYLE.content1,
                                                             color: COLORS.white,
                                                             display: '-webkit-box',
                                                             textOverflow: 'ellipsis',
                                                             WebkitLineClamp: 1,
                                                             WebkitBoxOrient: 'vertical',
-                                                            overflow: 'hidden'
+                                                            overflow: 'hidden',
                                                         }}
                                                     >
                                                         {i?.name}
@@ -389,7 +407,7 @@ const SearchResult = (props) => {
                                 key={i?.id}
                                 sx={{
                                     width: '100%',
-                                    height: isSm ? '74px' : '116px',
+                                    height: isSm ? '74px' : '100px',
                                     ...flexStyle('flex-start', 'center')
                                 }}
                             >
@@ -405,7 +423,8 @@ const SearchResult = (props) => {
                                             bgcolor: 'inherit',
                                             boxShadow: 'none',
                                             width: '100%',
-                                            height: '100%'
+                                            height: '100%',
+                                            cursor: 'pointer'
                                         }}
                                     >
                                         <Box
@@ -458,7 +477,7 @@ const SearchResult = (props) => {
                                                 >
                                                     <Typography
                                                         sx={{
-                                                            ...(isSm ? TEXT_STYLE.title2 : TEXT_STYLE.title1),
+                                                            ...(isSm ? TEXT_STYLE.content1 : TEXT_STYLE.h3),
                                                             color: COLORS.white,
                                                             display: '-webkit-box',
                                                             textOverflow: 'ellipsis',
@@ -487,13 +506,14 @@ function Search() {
     const windowSize = useWindowSize();
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
     const [type, setType] = useState('playlists');
-    const [searchResults, setSearchResults] = useState([]);
+    const [searchResults, setSearchResults] = useState(null);
     const [searchMeta, setSearchMeta] = useState({});
     const [resetStateFlag, setResetStateFlag] = useState(false);
-    const queryParams = useQuery();
-    const searchKey = queryParams.get('searchKey');
+    const router = useRouter();
+    const searchKey = router.query.searchKey;
+    const tab = router.query.type;
     const NUMBER_ITEMS_PER_LINE = isSm ? 3 : 5;
-    const SIDE_PADDING = 48;
+    const SIDE_PADDING = isSm ? 16 : 48;
     const SPACE_BETWEEN = isSm ? 16 : 24;
 
     useEffect(() => {
@@ -510,7 +530,7 @@ function Search() {
     }, [resetStateFlag]);
 
     useEffect(() => {
-        setSearchResults([]);
+        setSearchResults(null);
         setSearchMeta({});
         setResetStateFlag(!resetStateFlag);
     }, [type, searchKey]);
@@ -519,17 +539,43 @@ function Search() {
         updateRecentlyKeywords();
     }, []);
 
+    useEffect(() => {
+        if (tab) {
+            setType(tab);
+        } else {
+            setType('playlists')
+        }
+    }, [tab]);
+
+
     const fetchSearchResult = async (params) => {
         try {
-            const res = await api.getSearchResults(
+            let initSearchResults = [];
+            let res = await api.getSearchResults(
                 params.type,
                 params.searchKey,
                 params.nextOffset,
                 params.language,
                 params.nextQueryType
             );
-            const data = await res.data;
-            setSearchResults([...searchResults, ...data.data]);
+            let data = await res.data;
+            initSearchResults = [...initSearchResults, ...data.data];
+            if (data.meta && data.meta.next_offset === 2) {
+                res = await api.getSearchResults(
+                    params.type,
+                    params.searchKey,
+                    data.meta.next_offset,
+                    params.language,
+                    params.nextQueryType
+                );
+                data = await res.data;
+                initSearchResults = [...initSearchResults, ...data.data];
+            }
+
+            if (searchResults) {
+                initSearchResults = [...searchResults, ...initSearchResults];
+            }
+            setSearchResults([...initSearchResults]);
             if (['playlists', 'audios'].includes(type)) {
                 setSearchMeta({ ...data.meta });
             }
@@ -540,6 +586,13 @@ function Search() {
     }
 
     const handleClickSearchTab = (type) => {
+        router.push(
+            {
+                pathname: router.pathname,
+                query: { searchKey, type }
+            },
+            undefined, { shallow: true }
+        );
         setType(type);
     }
 
@@ -554,11 +607,13 @@ function Search() {
     }
 
     const updateRecentlyKeywords = () => {
+        if (!searchKey) {
+            return;
+        }
         let recentlyKeywork = getRecentlyKeywork() || [];
-        recentlyKeywork.push(searchKey);
-        recentlyKeywork = [...new Set(recentlyKeywork)];
-        if (recentlyKeywork.length > 5) {
-            recentlyKeywork = recentlyKeywork.slice(1);
+        recentlyKeywork = [...new Set([searchKey, ...recentlyKeywork])];
+        if (recentlyKeywork.length > 3) {
+            recentlyKeywork = recentlyKeywork.slice(0, 3);
         }
         setRecentlyKeywork(recentlyKeywork)
     }
@@ -589,16 +644,19 @@ function Search() {
         >
             <Box
                 sx={{
-                    mb: isSm ? '32px' : '48px'
+                    mb: isSm ? '32px' : '48px',
+                    width: '100%'
                 }}
             >
                 <Typography
                     sx={{
                         ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h1),
-                        color: COLORS.white
+                        color: COLORS.white,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                     }}
                 >
-                    Kết quả tìm kiếm cho "{searchKey}"
+                    Kết Quả Tìm Kiếm " {searchKey}"
                 </Typography>
             </Box>
             <Box
@@ -614,8 +672,8 @@ function Search() {
                             label={i.name}
                             sx={{
                                 bgcolor: (i.type === type) ? COLORS.bg3 : 'transparent',
-                                color: COLORS.VZ_Text_content,
-                                ...TEXT_STYLE.content2,
+                                color: (i.type === type) ? COLORS.white : COLORS.VZ_Text_content,
+                                ...TEXT_STYLE.title1,
                                 ':hover': {
                                     bgcolor: COLORS.bg3
                                 }
@@ -628,7 +686,7 @@ function Search() {
             <Divider sx={{ borderBottomColor: COLORS.bg2, mt: isSm ? '16px' : '24px', mb: isSm ? '16px' : '48px' }} />
             <Box>
                 {
-                    (searchResults.length > 0) && (
+                    (searchResults && searchResults.length > 0) && (
                         <SearchResult
                             searchResults={searchResults}
                             type={type}
@@ -640,7 +698,7 @@ function Search() {
                     )
                 }
                 {
-                    (searchResults.length === 0) && (
+                    (searchResults && searchResults.length === 0) && (
                         <Box
                             sx={{
                                 pt: isSm ? '65px' : '53px',
@@ -700,4 +758,4 @@ function Search() {
     )
 }
 
-export default withRouter(Search)
+export default Search

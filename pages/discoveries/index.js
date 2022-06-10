@@ -6,7 +6,8 @@ import Discovery from '../../src/components/Discovery/Discovery';
 
 const DiscoveryPage = () => {
     return (
-        <Discovery />
+        // <Discovery />
+        ''
     )
 }
 

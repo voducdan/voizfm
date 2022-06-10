@@ -13,14 +13,15 @@ import { Swiper, SwiperSlide } from '../../../node_modules/swiper/react/swiper-r
 import {
     Box,
     Typography,
-    Chip
+    Chip,
+    Divider
 } from '@mui/material';
-import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import StarIcon from '@mui/icons-material/Star';
 
 // import icons
 import {
-    AudioBook
+    AudioBook,
+    AccountCircle
 } from '../Icons/index'
 
 
@@ -144,6 +145,15 @@ export default function PlaylistRanking() {
         const id = e.currentTarget.id;
         setType(id)
         e.stopPropagation();
+    }
+
+    const formatRating = (rate) => {
+        try {
+            return Number(rate).toFixed(1);
+        }
+        catch (err) {
+            return 0;
+        }
     }
 
     return (
@@ -315,7 +325,7 @@ export default function PlaylistRanking() {
                                     >{(idx + 1) <= 9 ? `0${idx + 1}` : (idx + 1)}</Typography>
                                 </Box>
                                 <Link
-                                    href={`/playlists/${i?.id}`}
+                                    href={`/play/${i?.id}`}
                                     style={{ textDecoration: 'none' }}
                                 >
                                     <Box
@@ -328,13 +338,29 @@ export default function PlaylistRanking() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        <Box>
+                                        <Box
+                                            sx={{
+                                                position: 'relative',
+                                                width: isSm ? '80px' : '100px',
+                                                height: isSm ? '80px' : '100px',
+                                                ...(i?.promotion && {
+                                                    '&::before': {
+                                                        content: i?.promotion.includes('vip') ? "url('/images/dvip.png')" : i?.promotion === 'coin' ? "url('/images/dcoin.png')" : "url('/images/dfree.png')",
+                                                        position: 'absolute',
+                                                        right: 0,
+                                                        top: 0,
+                                                        zIndex: 8
+                                                    }
+                                                })
+                                            }}
+                                        >
                                             <img
                                                 src={i?.avatar?.thumb_url}
                                                 alt={`image ${i?.name}`}
                                                 style={{
                                                     width: isSm ? '80px' : '100px',
-                                                    height: isSm ? '80px' : '100px'
+                                                    height: isSm ? '80px' : '100px',
+                                                    borderRadius: '3px'
                                                 }}
                                             />
                                         </Box>
@@ -362,17 +388,16 @@ export default function PlaylistRanking() {
                                                     mb: isSm ? '4px' : '16px'
                                                 }}
                                             >
-                                                <AccountCircleOutlinedIcon sx={{
-                                                    color: COLORS.contentIcon,
-                                                    ...(isSm && {
-                                                        width: '16px',
-                                                        height: '16px'
-                                                    })
-                                                }} />
+                                                <AccountCircle />
                                                 <Typography
                                                     sx={{
                                                         ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
-                                                        color: COLORS.contentIcon
+                                                        color: COLORS.contentIcon,
+                                                        display: '-webkit-box',
+                                                        textOverflow: 'ellipsis',
+                                                        WebkitLineClamp: 1,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden'
                                                     }}
                                                 >{i?.author_string}</Typography>
                                             </Box>
@@ -394,7 +419,7 @@ export default function PlaylistRanking() {
                                                         ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
                                                         color: COLORS.contentIcon
                                                     }}
-                                                >{i?.playlist_counter?.content_avg} ({i?.playlist_counter?.ratings_count})</Typography>
+                                                >{formatRating(i?.playlist_counter?.content_avg)} ({i?.playlist_counter?.ratings_count})</Typography>
                                             </Box>
                                         </Box>
                                     </Box>
@@ -405,6 +430,15 @@ export default function PlaylistRanking() {
                     }
                 </Box>
             </Box>
+            {!isSm && (
+
+                <Divider
+                    sx={{
+                        background: COLORS.blackStroker,
+                        m: '100px 46px 0 46px'
+                    }}
+                />
+            )}
         </Box >
     )
 }

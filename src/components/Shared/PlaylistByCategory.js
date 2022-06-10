@@ -62,7 +62,7 @@ export default function PlaylistByCategory(props) {
                 {i.data.map((item) => (
                     <SwiperSlide key={item.id}>
                         <Link
-                            href={`/playlists/${item.id}`}
+                            href={`/play/${item.id}`}
                         >
                             <a>
                                 <Thumbnail style={{ width: `100%`, height: `${playlistImgWidth}px`, borderRadius: 3 }} avtSrc={item.avatar.thumb_url} alt={`images ${item.name}`} promotion={item?.promotion || ''} />

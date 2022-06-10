@@ -1,11 +1,11 @@
 // import react
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // import redux
 import { useSelector, useDispatch } from 'react-redux';
 
 // Import redux reducer, actions
-import { selectPaymentData, selectCart, setCart, setPaymentInfo } from '../../redux/payment';
+import { selectPaymentData, selectCart, setCart, setPaymentInfo, setItems } from '../../redux/payment';
 
 // import next router
 import { useRouter } from 'next/router';
@@ -23,7 +23,9 @@ import {
     ListItemButton,
     ListItemText,
     Collapse,
-    Snackbar
+    Snackbar,
+    Paper,
+    InputBase
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -81,7 +83,7 @@ const paymentMethods = [
 
 
 const RadioLable = (props) => {
-    const { src, paymentMethod } = props;
+    const { src, paymentMethod, isSm } = props;
     return (
         <Box
             sx={{
@@ -98,7 +100,7 @@ const RadioLable = (props) => {
             />
             <Typography
                 sx={{
-                    ...TEXT_STYLE.content1,
+                    ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
                     color: COLORS.white
                 }}
             >{paymentMethod}</Typography>
@@ -115,34 +117,48 @@ export default function Checkout() {
     const [expandBill, setExpandBill] = useState(false);
     const [isPaymentError, setIsPaymentError] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('shopee');
+    const [prevPaymentInfo, setPrevPaymentInfo] = useState({});
+    const [checkDiscountCode, setCheckDiscountCode] = useState(false);
+    const [isDiscountCodeValid, setIsDiscountCodeValid] = useState(true);
+    const [discountCode, setDiscountCode] = useState('');
     const paymentData = useSelector(selectPaymentData);
     const cart = useSelector(selectCart);
     const dispatch = useDispatch();
-    const {
-        selectedItem,
-        discountCode,
-        package_type,
-        totalPrice,
-        finalPrice
-    } = paymentData;
+
+    useEffect(() => {
+        let copiedPaymentData = { ...paymentData };
+        if (copiedPaymentData.selectedItem.length === 0) {
+            const localPaymentData = JSON.parse(localStorage.getItem('localPaymentData'));
+            if (localPaymentData && localPaymentData.selectedItem.length > 0) {
+                copiedPaymentData = { ...localPaymentData }
+            }
+        }
+
+        setPrevPaymentInfo(copiedPaymentData);
+    }, []);
 
     const hanleExpandBill = () => {
         setExpandBill(!expandBill);
     }
 
     const onEditCart = () => {
+        if (paymentData.package_type === 'plan_package') {
+            navigate.push('/up-vip');
+            return;
+        }
+        dispatch(setItems(paymentData));
         navigate.push('/cart');
     };
 
     const handleCheckout = async () => {
         try {
-            const packageIds = selectedItem.map(i => i.id);
+            const packageIds = prevPaymentInfo.selectedItem.map(i => i.id);
             const payload = {
-                "discount_code": discountCode || '',
-                "package_type": package_type,
+                "coupon_code": prevPaymentInfo.discountCode || '',
+                "package_type": prevPaymentInfo.package_type,
                 "package_id": packageIds,
                 "platform_type": "website",
-                "redirect_url": "http://13.214.152.147/"
+                "redirect_url": window.location.origin + '/cart'
             }
             const res = await api.payment(paymentMethod, payload);
             const data = await res.data;
@@ -150,12 +166,14 @@ export default function Checkout() {
                 setIsPaymentError(true);
                 return;
             }
-            const selectedItemId = selectedItem.map(i => i.id);
+            const selectedItemId = prevPaymentInfo.selectedItem.map(i => i.id);
             const remainedItems = cart.filter(i => !selectedItemId.includes(i.id));
             dispatch(setCart([...remainedItems]));
             dispatch(setPaymentInfo({ ...data.data }));
             // save to local storage
             localStorage.setItem('paymentData', JSON.stringify(data.data));
+            localStorage.setItem('localPaymentData', JSON.stringify(prevPaymentInfo));
+            localStorage.setItem('notified', false);
             if (['momo', 'appota', 'vnpay'].includes(paymentMethod)) {
                 window.location = data.data.url;
                 return;
@@ -166,6 +184,42 @@ export default function Checkout() {
             console.log(err);
             setIsPaymentError(true);
         }
+    }
+
+    const handleInputDiscountCode = (e) => {
+        setDiscountCode(e.target.value.trim());
+        setCheckDiscountCode(false);
+    }
+
+    const handleValidateDiscountCode = async () => {
+        try {
+            if (!discountCode) {
+                return;
+            }
+            // call api to validate
+            const packageIds = prevPaymentInfo.selectedItem.map(i => i.id);
+            const discountData = {
+                package_id: packageIds,
+                coupon_code: discountCode,
+                package_type: 'plan_package'
+            }
+            const res = await api.checkDiscountCode(discountData);
+            const data = await res.data.data;
+            const { amount, sale_amount } = data;
+            const copiedPrevPaymentInfo = { ...prevPaymentInfo };
+            copiedPrevPaymentInfo['discountCode'] = discountCode;
+            copiedPrevPaymentInfo['saleAmount'] = sale_amount - amount;
+            copiedPrevPaymentInfo['totalPrice'] = sale_amount;
+            copiedPrevPaymentInfo['finalPrice'] = amount;
+            console.log(copiedPrevPaymentInfo)
+            setPrevPaymentInfo({...copiedPrevPaymentInfo});
+            setIsDiscountCodeValid(true);
+        }
+        catch (err) {
+            setIsDiscountCodeValid(false);
+        }
+        setCheckDiscountCode(true);
+
     }
 
     return (
@@ -185,7 +239,7 @@ export default function Checkout() {
                 }}
             >Thanh toán</Typography>
             {
-                selectedItem.length > 0 && (
+                prevPaymentInfo?.selectedItem?.length > 0 && (
                     <Box
                         sx={{
                             ...flexStyle('flex-start', 'flex-start'),
@@ -249,11 +303,12 @@ export default function Checkout() {
                                                     borderBottom: `0.6px solid #443c3c`,
                                                     width: '100%',
                                                     margin: 0,
+                                                    ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1)
                                                 }}
                                                 checked={i.code === paymentMethod}
                                                 value={i.code}
                                                 control={<Radio />}
-                                                label={<RadioLable src={i.src} paymentMethod={i.name}
+                                                label={<RadioLable isSm={isSm} src={i.src} paymentMethod={i.name}
                                                 />}
                                             />
                                         ))
@@ -303,11 +358,11 @@ export default function Checkout() {
                                         >
                                             <Typography
                                                 sx={{
-                                                    ...TEXT_STYLE.content1,
+                                                    ...TEXT_STYLE.content2,
                                                     color: COLORS.contentIcon
                                                 }}
 
-                                            >{selectedItem.length} sản phẩm</Typography>
+                                            >{prevPaymentInfo?.selectedItem?.length} sản phẩm</Typography>
                                             <ListItemButton
                                                 sx={{
                                                     padding: 0
@@ -316,8 +371,10 @@ export default function Checkout() {
                                             >
                                                 <ListItemText
                                                     sx={{
-                                                        ...TEXT_STYLE.content2,
-                                                        color: COLORS.white
+                                                        color: COLORS.white,
+                                                        'span': {
+                                                            ...TEXT_STYLE.content2
+                                                        }
                                                     }}
                                                     primary={expandBill ? "Thu gọn" : "Xem thông tin"}
                                                 />
@@ -348,12 +405,13 @@ export default function Checkout() {
                             >
                                 <Collapse sx={{ mt: '16px' }} in={expandBill} timeout="auto" unmountOnExit>
                                     {
-                                        selectedItem.map(i => (
+                                        prevPaymentInfo?.selectedItem.map(i => (
                                             <Box
                                                 key={i.id}
                                                 sx={{
                                                     ...flexStyle('space-between', 'center'),
-                                                    mb: '16px'
+                                                    mb: '16px',
+                                                    columnGap: '10px'
                                                 }}
                                             >
                                                 <Typography
@@ -361,13 +419,22 @@ export default function Checkout() {
                                                         ...TEXT_STYLE.content2,
                                                         color: COLORS.white
                                                     }}
-                                                >{i.name}</Typography>
+                                                >
+                                                    {i.name}
+                                                </Typography>
                                                 {i.sale_coin_price && (<Typography
                                                     sx={{
                                                         ...TEXT_STYLE.content3,
                                                         color: COLORS.contentIcon
                                                     }}
-                                                >{formatPrice(i.sale_coin_price)} đ</Typography>
+                                                >{formatPrice(i.sale_coin_price)}đ</Typography>
+                                                )}
+                                                {!i.sale_coin_price && (<Typography
+                                                    sx={{
+                                                        ...TEXT_STYLE.content3,
+                                                        color: COLORS.contentIcon
+                                                    }}
+                                                >{formatPrice(i.pay_price)}đ</Typography>
                                                 )}
                                             </Box>
                                         ))
@@ -396,12 +463,89 @@ export default function Checkout() {
                                             ...TEXT_STYLE.title1,
                                             color: COLORS.white
                                         }}
-                                    >{formatPrice(totalPrice)} đ</Typography>
+                                    >{formatPrice(prevPaymentInfo?.totalPrice)}đ</Typography>
                                 </Box>
+                                {
+                                    (paymentData && paymentData.package_type === 'plan_package') && (
+                                        <Paper
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                width: '100%',
+                                                bgcolor: 'inherit',
+                                                boxShadow: 'none',
+                                                borderRadius: '4px',
+                                                height: '50px'
+                                            }}
+                                        >
+                                            <InputBase
+                                                sx={{
+                                                    ml: 1,
+                                                    flex: 1,
+                                                    ...TEXT_STYLE.content2,
+                                                    color: COLORS.white,
+                                                    margin: 0,
+                                                    width: '80%',
+                                                    border: `1px solid ${COLORS.placeHolder}`,
+                                                    height: '50px',
+                                                    borderTopLeftRadius: '4px',
+                                                    borderBottomLeftRadius: '4px',
+                                                    'input': {
+                                                        padding: '13px 18px'
+                                                    }
+                                                }}
+                                                value={discountCode}
+                                                onChange={handleInputDiscountCode}
+                                                placeholder="Nhập mã giảm giá (nếu có)"
+                                                autoComplete="off"
+                                                inputProps={{ 'aria-label': 'discount-code' }}
+                                            />
+                                            <Button
+                                                onClick={handleValidateDiscountCode}
+                                                sx={{
+                                                    width: '20%',
+                                                    textTransform: 'none',
+                                                    bgcolor: COLORS.main,
+                                                    ...TEXT_STYLE.title2,
+                                                    color: COLORS.white,
+                                                    height: '100%',
+                                                    borderRadius: 0,
+                                                    borderTopRightRadius: '4px',
+                                                    borderBottomRightRadius: '4px',
+                                                }}
+                                            >Sử dụng</Button>
+                                        </Paper>
+                                    )
+                                }
+                                {
+                                    checkDiscountCode && (
+                                        <Box
+                                            sx={{
+                                                mt: '8px',
+                                                ...TEXT_STYLE.title2,
+                                                color: isDiscountCodeValid ? COLORS.white : COLORS.error,
+                                                fontWeight: 400,
+                                            }}
+                                        >
+                                            Mã giảm giá&nbsp;
+                                            <span
+                                                style={{
+                                                    fontWeight: '700!important',
+                                                    ...TEXT_STYLE.title2,
+                                                    color: isDiscountCodeValid ? COLORS.white : COLORS.error,
+                                                    wordBreak: 'break-all'
+                                                }}
+                                            >
+                                                {discountCode}
+                                            </span>
+                                            &nbsp;{isDiscountCodeValid ? '' : 'không'} hợp lệ.
+                                        </Box>
+                                    )
+                                }
                                 <Box
                                     sx={{
                                         ...flexStyle('space-between', 'center'),
-                                        mb: '24px'
+                                        mt: '24px'
                                     }}
                                 >
                                     <Typography
@@ -415,12 +559,13 @@ export default function Checkout() {
                                             ...TEXT_STYLE.title1,
                                             color: COLORS.white
                                         }}
-                                    >{formatPrice(totalPrice - finalPrice)} đ</Typography>
+                                    >{prevPaymentInfo?.saleAmount ? formatPrice(prevPaymentInfo?.saleAmount) : '0'}đ</Typography>
                                 </Box>
                                 <Box
                                     sx={{
                                         ...flexStyle('space-between', 'center'),
-                                        mb: '24px'
+                                        mb: '24px',
+                                        mt: isSm ? '35px' : '24px'
                                     }}
                                 >
                                     <Typography
@@ -441,7 +586,7 @@ export default function Checkout() {
                                                 ...TEXT_STYLE.h2,
                                                 color: COLORS.white
                                             }}
-                                        >{formatPrice(finalPrice)} đ</Typography>
+                                        >{formatPrice(prevPaymentInfo?.finalPrice)}đ</Typography>
                                         <Typography
                                             sx={{
                                                 ...TEXT_STYLE.caption12,
@@ -471,7 +616,7 @@ export default function Checkout() {
                 )
             }
             {
-                selectedItem.length === 0 && (
+                prevPaymentInfo?.selectedItem?.length === 0 && (
                     <Box
                         sx={{
                             textAlign: 'center',

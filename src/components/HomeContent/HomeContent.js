@@ -211,12 +211,6 @@ export default function HomeContent() {
             setNewContents(data);
         }
 
-        async function fetchFeaturedAuthors(page = 1, limit = 10) {
-            const res = await api.getFeaturedAuthors(page, limit);
-            const data = await res.data.data;
-            setFeaturedAuthors(data);
-        }
-
         async function fetchCategoryLevel1Playlists() {
             let playlists = [];
             for (let category of CATEGORIES_LEVEL1) {
@@ -249,7 +243,6 @@ export default function HomeContent() {
             setPlaylistsBycategoryLevel2(playlists);
         }
 
-        fetchFeaturedAuthors();
         fetchNewContent();
         fetchCategoryLevel1Playlists();
         fetchCategoryLevel2Playlists();
@@ -290,15 +283,16 @@ export default function HomeContent() {
 
     return (
         <Main>
-            <HomeCarousel></HomeCarousel>
+            {/* <HomeCarousel></HomeCarousel> */}
             <Box sx={{
+                pt: '40px',
                 m: isSm ? '40px 20px' : '56px 48px',
             }}>
                 {<Title content="Gợi ý cho người chưa bắt đầu" isSm={isSm} />}
                 <Swiper slidesPerView={NUMBER_ITEMS_PER_LINE} spaceBetween={SPACE_BETWEEN} style={{ marginTop: 35, height: `${getPlaylistImgWidth()}px` }}>
                     {randomPlaylists.map(item => (
                         <SwiperSlide key={item?.id}>
-                            <Link href={`/playlists/${item?.id}`}>
+                            <Link href={`/play/${item?.id}`}>
                                 <a>
                                     <Thumbnail style={{ width: '100%', height: '100%', borderRadius: 3 }} avtSrc={item?.avatar?.thumb_url} alt={`images ${item?.id}`} promotion={item?.promotion || ''} />
                                 </a>
@@ -322,7 +316,7 @@ export default function HomeContent() {
                         >
                             {data.data.map((item) => (
                                 <SwiperSlide key={item?.id}>
-                                    <Link href={`/playlists/${item?.id}`}>
+                                    <Link href={`/play/${item?.id}`}>
                                         <a>
                                             <Thumbnail style={{ width: '100%', height: '100%', borderRadius: 3 }} avtSrc={item?.avatar?.thumb_url} alt={`images ${item?.id}`} promotion={item?.promotion || ''} />
                                         </a>
@@ -371,7 +365,7 @@ export default function HomeContent() {
                 >
                     {newContents.map((item) => (
                         <SwiperSlide key={item.id} >
-                            <Link href={`/playlists/${item?.id}`}>
+                            <Link href={`/play/${item?.id}`}>
                                 <a>
                                     <Thumbnail style={{ borderRadius: '6px', width: '100%', height: '100%' }} avtSrc={item.avatar?.thumb_url} alt={`images ${item?.id}`} promotion={item?.promotion || ''} />
                                 </a>
@@ -454,7 +448,7 @@ export default function HomeContent() {
                         >
                             {data.data.map((item) => (
                                 <SwiperSlide key={item?.id}>
-                                    <Link href={`/playlists/${item?.id}`}>
+                                    <Link href={`/play/${item?.id}`}>
                                         <a>
                                             <Thumbnail style={{ width: '100%', height: '100%', borderRadius: 3 }} avtSrc={item?.avatar?.thumb_url} alt={`images ${item?.id}`} promotion={item?.promotion || ''} />
                                         </a>

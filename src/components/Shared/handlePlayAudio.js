@@ -16,6 +16,7 @@ const handlePlayAudio = async (
     setErrorMessage,
     setOpenUpdateRequiredModal,
     setOpenUnauthorizedModal,
+    setOpenDonwloadAppModal,
     setOpenSnackbar
 ) => {
     const api = new API();
@@ -34,6 +35,7 @@ const handlePlayAudio = async (
             setErrorMessage,
             setOpenUpdateRequiredModal,
             setOpenUnauthorizedModal,
+            setOpenDonwloadAppModal,
             setOpenSnackbar
         );
     }

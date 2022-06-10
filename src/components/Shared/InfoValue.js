@@ -21,7 +21,9 @@ export default function InfoValue(props) {
                     ...TEXT_STYLE.content2,
                     color: COLORS.VZ_Text_content
                 }}
-            >{value}</Typography>
+            >
+                {value}
+            </Typography>
         </Box>
     )
 }

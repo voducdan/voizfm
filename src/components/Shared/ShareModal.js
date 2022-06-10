@@ -18,8 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import QRCode from 'qrcode.react';
 // import react share
 import {
-    FacebookShareButton,
-    FacebookMessengerShareButton
+    FacebookShareButton
 } from "react-share";
 
 // import icons

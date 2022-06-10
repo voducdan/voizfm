@@ -126,7 +126,6 @@ export default function EditProfileModal(props) {
     }
 
     const handleChangeBirthday = (birthday) => {
-        console.log(birthday)
         const formatedBirthday = format(new Date(birthday), 'yyyy-MM-dd');
         let user = { ...userInfo };
         user['birthday'] = formatedBirthday;
@@ -258,6 +257,7 @@ export default function EditProfileModal(props) {
             URL.revokeObjectURL(previewAvtUrl);
             setPreviewAvtUrl(null);
             dispatch(setUser(data.data));
+            props.setOpen(false);
         }
         catch (err) {
             const errList = err.response.data.error;
@@ -434,6 +434,7 @@ export default function EditProfileModal(props) {
                             name='firstName'
                             onChange={handleChangeUserInfo}
                             value={userInfo.firstName}
+                            autoComplete="off"
                             placeholder="Họ tên lót" variant="outlined"
                         />
                         <TextField
@@ -443,7 +444,9 @@ export default function EditProfileModal(props) {
                             name='lastName'
                             onChange={handleChangeUserInfo}
                             value={userInfo.lastName}
-                            placeholder="Tên" variant="outlined"
+                            placeholder="Tên"
+                            variant="outlined"
+                            autoComplete="off"
                         />
                     </Box>
                     <Box
@@ -467,7 +470,9 @@ export default function EditProfileModal(props) {
                             name='email'
                             onChange={handleChangeUserInfo}
                             value={userInfo.email || ''}
-                            placeholder="Địa chỉ email" variant="outlined"
+                            placeholder="Địa chỉ email"
+                            variant="outlined"
+                            autoComplete="off"
                         />
                     </Box>
                     <Box
@@ -491,7 +496,9 @@ export default function EditProfileModal(props) {
                             onClick={() => { setStep(1) }}
                             name='phoneNumber'
                             value={phoneNumber}
-                            placeholder="Số điện thoại" variant="outlined"
+                            placeholder="Số điện thoại"
+                            variant="outlined"
+                            autoComplete="off"
                         />
                     </Box>
                     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -529,7 +536,9 @@ export default function EditProfileModal(props) {
                                             name='birthday'
                                             onChange={handleChangeUserInfo}
                                             value={userInfo.birthday}
-                                            placeholder="Ngày tháng năm sinh" variant="outlined"
+                                            placeholder="Ngày tháng năm sinh"
+                                            variant="outlined"
+                                            autoComplete="off"
                                         />
                                     </Box>
                                 )
@@ -629,6 +638,7 @@ export default function EditProfileModal(props) {
                         }}
                         placeholder="123456"
                         variant="outlined"
+                        autoComplete="off"
                         onChange={onOTPChange}
                     />
                     <CustomDisabledButton
@@ -724,6 +734,7 @@ export default function EditProfileModal(props) {
                             }}
                             placeholder="986754523"
                             variant="outlined"
+                            autoComplete="off"
                             onChange={onPhoneChange}
                         />
                     </Box>

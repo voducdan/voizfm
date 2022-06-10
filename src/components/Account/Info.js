@@ -38,6 +38,12 @@ export default function Info() {
         if (!accountData) {
             return 0;
         }
+        if (accountData?.plan_subscriptions && accountData?.plan_subscriptions.length > 0) {
+            for (let i of accountData?.plan_subscriptions) {
+                if (i?.remaining_day && i?.remaining_day > 0)
+                    return i?.remaining_day;
+            }
+        }
         if (accountData.user_resource.remaining_seconds === 0 || accountData.user_resource.remaining_seconds) {
             return Math.floor(accountData.user_resource.remaining_seconds / 86400);
         }

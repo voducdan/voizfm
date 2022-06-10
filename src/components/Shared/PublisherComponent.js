@@ -190,7 +190,8 @@ export default function PublisherComponent(props) {
                     swiper.params.navigation.nextEl = navigationPublisherNextRef.current;
                 }}
                 slidesPerGroup={5}
-                slidesPerView={num_items_per_line} spaceBetween={isSm ? 8 : 20}>
+                slidesPerView={num_items_per_line}
+                spaceBetween={isSm ? 8 : 20}>
                 {publishers.map((item) => (
                     <SwiperSlide key={item.id}>
                         <a>

@@ -1,3 +1,10 @@
+@font-face {
+    font-family: 'SF UI Display';
+    font-style: normal;
+    font-weight: normal;
+    src: local('SF UI Display'), url('./font/sf-ui-display.woff2') format('woff');
+}
+
 .swiper-wrapper {
     justify-content: flex-start;
     align-items: center

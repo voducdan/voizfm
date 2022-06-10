@@ -92,6 +92,8 @@ export default function ChannelDetail({ channelFromAPI }) {
     const [openUnauthorizedModal, setOpenUnauthorizedModal] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [audio, setAudio] = useState(null);
+    const [hasLoadMoreAudio, setHasLoadMoreAudio] = useState(true);
+    const [audioPage, setAudioPage] = useState(1);
 
     const dispatch = useDispatch();
 
@@ -101,20 +103,40 @@ export default function ChannelDetail({ channelFromAPI }) {
             const data = await res.data.data;
             setPlaylists(data);
         }
-        async function fetchAudios() {
-            const res = await api.getChannelAudio(id);
-            const data = await res.data.data;
-            setAudios(data);
+        function fetchAudios(id) {
+            getAudios(id, 1)
         }
 
-        fetchPlaylists();
-        fetchAudios();
+        if (id) {
+            fetchPlaylists();
+            fetchAudios(id);
+        }
     }, []);
 
 
     useEffect(() => {
         setUrl(window.location.href);
     }, [router.query]);
+
+    useEffect(() => {
+        if (id) {
+            getAudios(id, audioPage)
+        }
+    }, [audioPage]);
+
+    const getAudios = async (id, page) => {
+        const res = await api.getChannelAudio(id, page);
+        const data = await res.data.data;
+        setAudios([...audios, ...data]);
+        if (data.length < 10) {
+            setHasLoadMoreAudio(false);
+        }
+    }
+
+    const handleLoadMoreAudio = () => {
+        const newAudioPage = audioPage + 1;
+        setAudioPage(newAudioPage);
+    }
 
     const handleBookmark = () => {
         async function bookmarkChannel(cb) {
@@ -191,11 +213,12 @@ export default function ChannelDetail({ channelFromAPI }) {
                 sx={{
                     width: '100%',
                     minHeight: isSm ? '272px' : '390px',
-                    ...flexStyle('flext-start', 'flex-start'),
+                    ...(isSm ? flexStyle('flext-start', 'flex-start') : flexStyle('flext-start', 'center')),
                     p: isSm ? '25px 18px 25px 17px' : '50px 50px 50px 160px',
                     boxSizing: 'border-box',
                     mb: isSm ? '16px' : '40px',
                     position: 'relative',
+                    zIndex: 1,
                     '&::before': {
                         content: "''",
                         position: 'absolute',
@@ -206,7 +229,8 @@ export default function ChannelDetail({ channelFromAPI }) {
                         backgroundImage: "url('/images/bgchannelDetail.png')",
                         backgroundRepeat: 'no-repeat',
                         backgroundSize: 'cover',
-                        opacity: 0.4
+                        opacity: 0.4,
+                        zIndex: -1
                     }
                 }}
             >
@@ -263,7 +287,8 @@ export default function ChannelDetail({ channelFromAPI }) {
                                     sx={{
                                         width: '100%',
                                         ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h2),
-                                        color: COLORS.white
+                                        color: COLORS.white,
+                                        cursor: 'text'
                                     }}
                                 >{channel?.name}</Typography>
                                 <Box
@@ -284,7 +309,8 @@ export default function ChannelDetail({ channelFromAPI }) {
                                     <Typography
                                         sx={{
                                             ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
-                                            color: COLORS.contentIcon
+                                            color: COLORS.contentIcon,
+                                            cursor: 'text'
                                         }}
                                     >theo dõi</Typography>
                                 </Box>
@@ -297,7 +323,8 @@ export default function ChannelDetail({ channelFromAPI }) {
                                 <Typography
                                     sx={{
                                         ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
-                                        color: COLORS.VZ_Text_content
+                                        color: COLORS.VZ_Text_content,
+                                        cursor: 'text'
                                     }}
                                 >{channel?.description}</Typography>
                             </Box>
@@ -480,7 +507,8 @@ export default function ChannelDetail({ channelFromAPI }) {
                         <Box>
                             <List
                                 sx={{
-                                    width: '100%'
+                                    width: '100%',
+                                    textAlign: 'center'
                                 }}
                             >
                                 {audios.map((i, idx) => {
@@ -529,6 +557,28 @@ export default function ChannelDetail({ channelFromAPI }) {
                                         </ListItem>
                                     );
                                 })}
+                                {
+                                    hasLoadMoreAudio && (
+                                        <Button
+                                            onClick={handleLoadMoreAudio}
+                                            sx={{
+                                                textTransform: 'none',
+                                                ...TEXT_STYLE.title2,
+                                                color: COLORS.white,
+                                                bgcolor: COLORS.main,
+                                                width: '170px',
+                                                height: '40px',
+                                                borderRadius: '4px',
+                                                mt: '10px',
+                                                ':hover': {
+                                                    bgcolor: COLORS.main
+                                                }
+                                            }}
+                                        >
+                                            Tải thêm
+                                        </Button>
+                                    )
+                                }
                             </List>
                         </Box>
                     </Box>

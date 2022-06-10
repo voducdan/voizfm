@@ -1,8 +1,8 @@
 export default function Star(props) {
+    const { fill } = props;
     return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11.9941 0L9.3004 8.2918H0.583302L7.63558 13.4164L4.94185 21.7082L11.9941 16.5836L19.0464 21.7082L16.3527 13.4164L23.405 8.2918H14.6879L11.9941 0Z" fill="#ACACAC" />
+        <svg width="24" height="22" viewBox="0 0 24 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0L14.6942 8.2918H23.4127L16.3593 13.4164L19.0534 21.7082L12 16.5836L4.94658 21.7082L7.64074 13.4164L0.587322 8.2918H9.30583L12 0Z" fill={fill} />
         </svg>
-
     )
 }

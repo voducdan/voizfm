@@ -56,6 +56,13 @@ import OpenBook from './OpenBook';
 import Like from './Like';
 import Comment from './Comment';
 import Tick from './Tick';
+import User from './User';
+import GraphicEQ from './GraphicEQ';
+import AccessTime from './AccessTime';
+import Pencil1 from './Pencil1';
+import Send from './Send';
+import AccountCircle from './AccountCircle';
+import Trash from './Trash';
 
 export {
     Bookmark,
@@ -115,5 +122,12 @@ export {
     Comment,
     Like,
     Tick,
-    FreeMedal
+    FreeMedal,
+    User,
+    GraphicEQ,
+    AccessTime,
+    Pencil1,
+    Send,
+    AccountCircle,
+    Trash
 }

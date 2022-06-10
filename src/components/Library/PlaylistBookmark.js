@@ -15,7 +15,6 @@ import {
     Snackbar,
     Alert
 } from '@mui/material';
-import GraphicEqOutlinedIcon from '@mui/icons-material/GraphicEqOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -28,10 +27,13 @@ import { Swiper, SwiperSlide } from '../../../node_modules/swiper/react/swiper-r
 // import others components
 import PlaylistThumnail from '../../components/Shared/PlaylistThumbnail'
 import Thumbnail from '../../components/Thumbnail/Thumbnail';
+import {
+    GraphicEQ
+} from '../../components/Icons/index';
 
 // import utils
 import { flexStyle } from '../../utils/flexStyle'
-import { TEXT_STYLE, COLORS, SCREEN_BREAKPOINTS } from '../../utils/constants';
+import { TEXT_STYLE, COLORS, SCREEN_BREAKPOINTS, DRAWER_WIDTH } from '../../utils/constants';
 import useWindowSize from '../../utils/useWindowSize';
 
 // import service
@@ -74,7 +76,7 @@ const PlaylistAudioCount = (props) => {
                 columnGap: '6px'
             }}
         >
-            <GraphicEqOutlinedIcon sx={{ color: COLORS.contentIcon, width: isSm ? '12px' : '16px', height: isSm ? '12px' : '16px' }} />
+            <GraphicEQ />
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.content2 : TEXT_STYLE.content1),
@@ -88,8 +90,19 @@ const PlaylistAudioCount = (props) => {
 }
 
 const ChannelBookmark = (props) => {
-    const { data, isSm, handleBookmarkChannel } = props;
+    const { data, isSm, handleBookmarkChannel, windowWidth } = props;
     const playlists = data.playlists;
+    const getPlaylistImgWidth = () => {
+        const numItemsPerLine = isSm ? 2.5 : 5;
+        const spaceBetween = isSm ? 8 : 24;
+        const width = windowWidth;
+        let innerWidth = width - 43 * 2;
+        const spaceToBeSubstracted = ((numItemsPerLine - 1) * spaceBetween) / numItemsPerLine;
+        if (!isSm) {
+            innerWidth -= DRAWER_WIDTH;
+        }
+        return (innerWidth / numItemsPerLine) - spaceToBeSubstracted;
+    }
     return (
         <Box
             sx={{
@@ -120,26 +133,35 @@ const ChannelBookmark = (props) => {
                     <Typography
                         sx={{
                             ...(isSm ? TEXT_STYLE.title1 : TEXT_STYLE.h3),
-                            color: COLORS.white
+                            color: COLORS.white,
+                            cursor: 'pointer'
                         }}
                     >
                         {data.name}
                     </Typography>
-                    <ChevronRightIcon sx={{ color: COLORS.white }} />
+                    <Link
+                        href={`/channels/${data?.id}`}
+                    >
+                        <ChevronRightIcon
+                            sx={{
+                                color: COLORS.white,
+                                cursor: 'pointer'
+                            }}
+                        />
+                    </Link>
                 </Box>
                 <Button
                     onClick={() => { handleBookmarkChannel(data.id) }}
                     sx={{
-                        ...(isSm ? TEXT_STYLE.title3 : TEXT_STYLE.title1),
+                        ...(isSm ? TEXT_STYLE.title3 : TEXT_STYLE.title2),
                         ...(isSm && { whiteSpace: 'nowrap' }),
                         color: COLORS.white,
                         borderRadius: '22px',
-                        height: isSm ? '28px' : '48px',
-                        width: 'max-content',
+                        height: isSm ? '28px' : '32px',
+                        width: isSm ? '127px' : '144px',
                         textTransform: 'none',
                         bgcolor: data['is_bookmark'] ? COLORS.bg3 : COLORS.main,
-                        pl: '14px',
-                        pr: '14px',
+                        p: 0,
                         ':hover': {
                             bgcolor: data['is_bookmark'] ? COLORS.bg3 : COLORS.main
                         }
@@ -148,14 +170,22 @@ const ChannelBookmark = (props) => {
                 >{data['is_bookmark'] ? 'Hủy theo dõi' : 'Theo dõi'}</Button>
             </Box>
 
-            <Swiper slidesPerView={isSm ? 2.5 : 5} spaceBetween={isSm ? 8 : 22} style={{ marginTop: '10px' }}>
+            <Swiper
+                slidesPerView={isSm ? 2.5 : 5}
+                spaceBetween={isSm ? 8 : 24}
+                style={{
+                    marginTop: '10px'
+                }}
+            >
                 {playlists.map((item) => (
-                    <SwiperSlide key={item.id}>
+                    <SwiperSlide
+                        key={item.id}
+                        style={{
+                            height: `${getPlaylistImgWidth()}px`
+                        }}
+                    >
                         <Link
-                            href={`/playlists/${item.id}`}
-                            style={{
-                                height: isSm ? '145px' : '186px'
-                            }}
+                            href={`/play/${item.id}`}
                         >
                             <a>
                                 <Thumbnail
@@ -169,6 +199,7 @@ const ChannelBookmark = (props) => {
                 ))}
             </Swiper>
         </Box>
+
     )
 }
 
@@ -176,7 +207,11 @@ const tabStyle = () => ({
     '&.MuiTab-root': {
         ...TEXT_STYLE.title1,
         color: COLORS.contentIcon,
-        textTransform: 'none'
+        textTransform: 'none',
+        alignItems: 'flex-start',
+        p: 0,
+        minWidth: 0,
+        mr: '16px'
     },
     '&.Mui-selected': {
         color: COLORS.white
@@ -194,7 +229,7 @@ function a11yProps(index) {
 export default function PlaylistBookmark() {
     const api = new API();
     const windowSize = useWindowSize();
-    const pageLimit = 10;
+    const pageLimit = 9999;
     const isSm = windowSize.width <= SCREEN_BREAKPOINTS.sm ? true : false;
 
     const [playlistBookmarks, setPlaylistBookmarks] = useState([]);
@@ -249,7 +284,8 @@ export default function PlaylistBookmark() {
                 }
                 const playlistBookmarksTmp = [...playlistBookmarks];
                 const playlistId = playlistBookmarksTmp.findIndex(i => i.id === id);
-                playlistBookmarksTmp[playlistId]['is_bookmark'] = !playlistBookmarksTmp[playlistId]['is_bookmark'];
+                // playlistBookmarksTmp[playlistId]['is_bookmark'] = !playlistBookmarksTmp[playlistId]['is_bookmark'];
+                playlistBookmarksTmp.splice(playlistId, 1);
                 setPlaylistBookmarks([...playlistBookmarksTmp]);
             }
             catch (err) {
@@ -288,7 +324,11 @@ export default function PlaylistBookmark() {
     }
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box
+            sx={{
+                width: '100%'
+            }}
+        >
             <Typography
                 sx={{
                     ...(isSm ? TEXT_STYLE.h3 : TEXT_STYLE.h2),
@@ -297,7 +337,12 @@ export default function PlaylistBookmark() {
                     mb: '32px'
                 }}
             >Đánh dấu</Typography>
-            <Box sx={{ borderBottom: 1, borderColor: COLORS.blackStroker }}>
+            <Box
+                sx={{
+                    borderBottom: 1,
+                    borderColor:
+                        COLORS.blackStroker
+                }}>
                 <Tabs
                     value={value}
                     onChange={handleChange}
@@ -333,7 +378,13 @@ export default function PlaylistBookmark() {
             <TabPanel value={value} index={1} isSm={isSm}>
                 {
                     channelBookmarks.map(i => (
-                        <ChannelBookmark key={i.id} isSm={isSm} data={i} handleBookmarkChannel={handleBookmarkChannel} />
+                        <ChannelBookmark
+                            key={i.id}
+                            isSm={isSm}
+                            data={i}
+                            windowWidth={windowSize.width}
+                            handleBookmarkChannel={handleBookmarkChannel}
+                        />
                     ))
                 }
             </TabPanel>

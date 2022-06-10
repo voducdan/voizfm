@@ -30,7 +30,8 @@ const ChannelDetailPage = ({ channel }) => {
 }
 
 export async function getServerSideProps(context) {
-    const api = new API();
+    const { token } = context.req.cookies;
+    const api = new API(token);
     const { params } = context;
     const res = await api.getChannel(params.id);
     const channel = res.data.data;

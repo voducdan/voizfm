@@ -1,3 +1,4 @@
+
 // import MUI components
 import {
     Box
@@ -6,7 +7,7 @@ import {
 // import others components
 import VipPackage from "./VipPackage";
 import VipBenefit from "./VipBenefit";
-import VipCombo from "./VipCombo";
+// import VipCombo from "./VipCombo";
 import FAQ from "./FAQ";
 
 export default function UpVip() {
@@ -14,7 +15,7 @@ export default function UpVip() {
         <Box>
             <VipPackage />
             <VipBenefit />
-            <VipCombo />
+            {/* <VipCombo /> */}
             <FAQ />
         </Box>
     )

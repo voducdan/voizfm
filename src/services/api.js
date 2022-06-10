@@ -2,40 +2,40 @@ import * as axios from 'axios';
 
 import { getToken } from './authentication';
 import Sha256Encrypt from '../utils/sha256';
-import token from '../redux/token';
 
 export default class API {
-    constructor() {
-        this.api_token = getToken();
+    constructor(token) {
+        this.api_token = token || getToken();
         this.client = null;
         this.base_url = `${process.env.NEXT_PUBLIC_API_PROTOCAL}://${process.env.NEXT_PUBLIC_BASE_URL}`;
     }
 
-    init = (token, xSignature) => {
-        this.api_token = token || getToken();
+
+    init = (accessToken, xSignature) => {
         this.oauth2 = 'oauth2';
         this.oauth2_id = null;
         this.xSignature = xSignature;
-        let headers = {
+        this.headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Access-Control-Allow-Credentials': true
         };
+        if (accessToken) {
+            this.headers['X-Authorization'] = accessToken;
+        }
 
         if (!!this.api_token) {
-            headers['X-Authorization'] = this.api_token;
+            this.headers['X-Authorization'] = this.api_token;
         };
-
         if (!!this.xSignature) {
-            headers['X-Signature'] = this.xSignature;
+            this.headers['X-Signature'] = this.xSignature;
         };
 
         this.client = axios.create({
             baseURL: this.base_url,
-            timeout: 10000,
-            headers: headers
+            timeout: 120000,
+            headers: this.headers
         });
-
 
 
         return this.client
@@ -56,7 +56,7 @@ export default class API {
             content += `&access_token=${this.api_token}`
         }
         const xSignature = Sha256Encrypt(content);
-        return this.init(null, xSignature).get(`/web/audios/${id}/files`)
+        return this.init(null, xSignature).get(`/web/audios/${id}/streaming`)
     }
 
     getAudioHls = (url) => {
@@ -80,7 +80,7 @@ export default class API {
 
     removeCartItem = (playlistId) => {
         return this.init().delete(`web/carts/${playlistId}`);
-    }
+    }       
 
     payment = (method, data) => {
         return this.init().post(`/web/payment/${method}`, data);
@@ -94,8 +94,10 @@ export default class API {
         return this.init().get(`/web/plan_packages`)
     }
 
-    getDiscoveries = () => {
-        return this.init().get(`/discoveries`)
+    getDiscoveries = (limit = 15, page = 1) => {
+        const params = { limit, page };
+        const queryString = this.buildQueryString(params)
+        return this.init().get(`/discoveries?${queryString}`)
     }
 
     getDiscovery = (id, page, limit = 10) => {
@@ -104,7 +106,7 @@ export default class API {
         return this.init().get(`/discoveries/${id}?${queryString}`)
     }
 
-    getDiscoveryComment = (discoveryId, page, limit = 4) => {
+    getDiscoveryComment = (discoveryId, page, limit = 10) => {
         return this.init().get(`/discoveries/${discoveryId}/comments?limit=${limit}&page=${page}`)
     }
 
@@ -120,16 +122,20 @@ export default class API {
         return this.init().post(`/discoveries/${discoveryId}/likes`)
     }
 
-    getPlaylistHistory = () => {
-        return this.init().get(`/profiles/playlist_histories`)
+    getPlaylistHistory = (page = 1, limit = 99999) => {
+        const params = { page, limit };
+        const queryString = this.buildQueryString(params);
+        return this.init().get(`/profiles/playlist_histories?${queryString}`)
     }
 
-    getAudioHistory = () => {
-        return this.init().get(`/profiles/audio_histories`)
+    getAudioHistory = (page = 1, limit = 99999) => {
+        const params = { page, limit };
+        const queryString = this.buildQueryString(params);
+        return this.init().get(`/profiles/audio_histories?${queryString}`)
     }
 
     getPlaylistOrders = () => {
-        return this.init().get(`/profiles/playlist_orders`)
+        return this.init().get('/profiles/playlist_orders')
     }
 
     getPlaylistBookmarks = (page, limit) => {
@@ -152,8 +158,14 @@ export default class API {
         return this.init().get(`/profiles/audio_histories/likes?${queryString}`);
     }
 
-    getListeningPlaylists = () => {
-        return this.init().get(`/playlists/listenings`);
+    getOrderedCombo = () => {
+        return this.init().get('/profiles/combo_packages');
+    }
+
+    getListeningPlaylists = (page = 1, limit = 9999999) => {
+        const params = { page, limit };
+        const queryString = this.buildQueryString(params);
+        return this.init().get(`/playlists/listenings?$${queryString}`);
     }
 
     addListeningPlaylists = (audioId, lastDuration, playlistId) => {
@@ -197,8 +209,10 @@ export default class API {
         return this.init().get(`/playlists/analyses?${queryString}`);
     }
 
-    getPlaylistAudios = (id) => {
-        return this.init().get(`/playlists/${id}/audios`);
+    getPlaylistAudios = (id, page = 1) => {
+        const params = { page };
+        const queryString = this.buildQueryString(params);
+        return this.init().get(`/playlists/${id}/audios?${queryString}`);
     }
 
     getRequestedBook = () => {
@@ -217,8 +231,8 @@ export default class API {
         return this.init().get(`/playlists/recommendation`);
     }
 
-    getSearchResults = (type, keyword, next_offset = null, language = null, next_query_type = null, limit = 20) => {
-        const params = { keyword, limit, next_offset, language, next_query_type };
+    getSearchResults = (type, keyword, next_offset = null, language = null, next_query_type = null) => {
+        const params = { keyword, next_offset, language, next_query_type };
         const queryString = this.buildQueryString(params)
         return this.init().get(`/search/${type}?${queryString}`);
     }
@@ -237,8 +251,8 @@ export default class API {
         return this.init().get(`/authors/${id}/playlists?${queryString}`);
     }
 
-    getPlaylistRanking = (type, code) => {
-        const params = { ranking_type: type, code };
+    getPlaylistRanking = (type, code, limit = 999999) => {
+        const params = { ranking_type: type, code, limit };
         const queryString = this.buildQueryString(params)
         return this.init().get(`/playlists/rankings?${queryString}`);
     }
@@ -365,11 +379,27 @@ export default class API {
         return this.init().post('web/auth/facebook', data);
     }
 
-    getVoicerPlaylists = (id) => {
-        return this.init().get(`/voicers/${id}/playlists`);
+    getVoicerPlaylists = (id, page, limit = 10) => {
+        const params = { page, limit };
+        const queryString = this.buildQueryString(params);
+        return this.init().get(`/voicers/${id}/playlists?${queryString}`);
     }
 
     getVersion = () => {
-        return this.init().get('/versions?platform=watch');
+        return this.init().get('/versions?platform=website');
+    }
+
+    trackingAudio = (data) => {
+        return this.init().post('/audios/listening', {
+            audio_listenings: data
+        });
+    }
+
+    checkDiscountCode = (data) => {
+        return this.init().post('/web/use_coupon', data);
+    }
+
+    verifyAccount = (data) => {
+        return this.init().post('/auth/verification', data);
     }
 }
